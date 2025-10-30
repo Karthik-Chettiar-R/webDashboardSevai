@@ -1,0 +1,43 @@
+{
+  // Project-specific tsconfig
+  "compilerOptions": {
+    // Ensure this package's sources are rooted at the webDashboard folder so
+    // extending the root tsconfig (which sets rootDir:"src") doesn't make
+    // the editor/typechecker treat these files as outside the program.
+    "rootDir": ".",
+    "jsx": "preserve",
+    "allowJs": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "noEmit": true,
+    "types": [
+      "next",
+      "node",
+      "react"
+    ],
+    "lib": [
+      "dom",
+      "es2021"
+    ],
+    "skipLibCheck": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "strict": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
