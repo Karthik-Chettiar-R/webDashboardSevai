@@ -1,44 +1,21 @@
-import fs from 'fs'
-import path from 'path'
 import type { GetStaticProps } from 'next'
 import { PieChartWithLegend } from '@/components/ui/pie-chart-with-legend'
-import { MonthlyHeatmap } from '@/components/ui/monthly-heatmap'
-import { SampleDataTable } from '@/components/ui/sample-data-table'
-import { Card } from '@/components/ui/card'
-import {InteractiveHoverButton} from '@/components/ui/interactive-hover-button'
 
-type User = {
-  id: string
-  name: string
-  email: string
-  joined: string
-}
-
-export default function Home({ users }: { users: User[] }) {
+export default function Home() {
   return (
-    
-     
-      <div className="p-8 space-y-8">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="space-y-4 mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Browser usage statistics</p>
+        </div>
+        
         <PieChartWithLegend />
-        
-        <SampleDataTable />
-        <InteractiveHoverButton/>
-       
-        <MonthlyHeatmap 
-            width={500} 
-            height={300} 
-            events={true}
-        />
       </div>
-        
-    
-   
+    </div>
   )
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const p = path.join(process.cwd(), 'public', 'sample-users.json')
-  const raw = fs.readFileSync(p, 'utf8')
-  const users = JSON.parse(raw) as User[]
-  return { props: { users } }
+  return { props: {} }
 }

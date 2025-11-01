@@ -1,0 +1,95 @@
+{
+  "weekly": {
+    "chartTitle": "Browser Usage",
+    "chartPeriod": "Last 7 Days",
+    "categoryTitle": "Browser Categories",
+    "browsers": [
+      {
+        "id": "chrome",
+        "name": "Chrome",
+        "visitors": 85,
+        "color": "hsl(var(--chart-1))"
+      },
+      {
+        "id": "safari",
+        "name": "Safari",
+        "visitors": 62,
+        "color": "hsl(var(--chart-2))"
+      },
+      {
+        "id": "firefox",
+        "name": "Firefox",
+        "visitors": 48,
+        "color": "hsl(var(--chart-3))"
+      },
+      {
+        "id": "edge",
+        "name": "Edge",
+        "visitors": 35,
+        "color": "hsl(var(--chart-4))"
+      }
+    ]
+  },
+  "monthly": {
+    "chartTitle": "Browser Usage",
+    "chartPeriod": "Last 30 Days",
+    "categoryTitle": "Browser Categories",
+    "browsers": [
+      {
+        "id": "chrome",
+        "name": "Chrome",
+        "visitors": 275,
+        "color": "hsl(var(--chart-1))"
+      },
+      {
+        "id": "safari",
+        "name": "Safari",
+        "visitors": 200,
+        "color": "hsl(var(--chart-2))"
+      },
+      {
+        "id": "firefox",
+        "name": "Firefox",
+        "visitors": 187,
+        "color": "hsl(var(--chart-3))"
+      },
+      {
+        "id": "edge",
+        "name": "Edge",
+        "visitors": 173,
+        "color": "hsl(var(--chart-4))"
+      }
+    ]
+  },
+  "max": {
+    "chartTitle": "Browser Usage",
+    "chartPeriod": "All Time",
+    "categoryTitle": "Browser Categories",
+    "browsers": [
+      {
+        "id": "chrome",
+        "name": "Chrome",
+        "visitors": 1250,
+        "color": "hsl(var(--chart-1))"
+      },
+      {
+        "id": "safari",
+        "name": "Safari",
+        "visitors": 890,
+        "color": "hsl(var(--chart-2))"
+      },
+      {
+        "id": "firefox",
+        "name": "Firefox",
+        "visitors": 720,
+        "color": "hsl(var(--chart-3))"
+      },
+      {
+        "id": "edge",
+        "name": "Edge",
+        "visitors": 615,
+        "color": "hsl(var(--chart-4))"
+      }
+    ]
+  }
+}

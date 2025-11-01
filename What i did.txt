@@ -10,3 +10,53 @@ For heatmap
 website https://21st.dev/community/components/airbnb/heatmaps/default
 installation is in the website itself
 have to work on refining more
+
+---
+
+WHAT I DID:
+
+1. Converted pie chart to donut chart with multi-ring visualization
+   - Largest data gets biggest ring (descending sizes)
+   - Mobile: 70px base radius, Desktop: 115px base radius
+   - Inner radius creates donut hole (25 mobile, 40 desktop)
+
+2. Removed ALL click effects from pie chart
+   - Only hover effects remain (desktop only)
+   - Tooltip auto-hides on mobile to prevent stuck tooltips
+
+3. Kept table click functionality
+   - Click highlights row with auto-clear after 500ms
+   - Touch support with blur after interaction
+   - Synchronized hover between table and chart
+
+4. Implemented period navigation
+   - Swipe gestures for mobile (left/right, 50px minimum)
+   - Three periods: Weekly, Monthly, Max
+   - Dots indicator showing current period
+   - Arrow buttons for navigation
+
+5. Added data-driven architecture
+   - Single JSON file: public/dashboard-data.json
+   - Three data periods with separate titles and values
+   - Dynamic loading with fetch API
+
+6. Implemented loading animations
+   - Pulse effect during data load
+   - Fade transitions (300ms)
+   - Staggered card animations (100ms delay)
+   - Scale effects for smooth entry
+
+7. Enforced dark theme only
+   - Forced dark mode via _app.tsx
+   - Removed theme switcher
+   - OKLCH color space for consistency
+
+8. Made responsive design
+   - Mobile (< 640px): Side-by-side layout (52% chart, 48% table)
+   - Desktop (>= 640px): Side-by-side layout (60% chart, 40% table)
+   - Never stacks vertically, always proportional shrinking
+
+9. Cleaned up repository
+   - Deleted THEME.md and REBUILD_SUMMARY.md
+   - Consolidated documentation into this file and README.md
+   - Removed unused markdown files

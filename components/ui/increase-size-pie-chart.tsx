@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LabelList, Pie, PieChart, Cell } from "recharts";
 
 import {
@@ -16,23 +16,39 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Badge } from "./badge";
-import { TrendingDown } from "lucide-react";
 
-const chartData = [
+export interface DashboardData {
+  chartTitle: string;
+  chartPeriod: string;
+  categoryTitle: string;
+  browsers: Array<{
+    id: string;
+    name: string;
+    visitors: number;
+    color: string;
+  }>;
+}
+
+export const chartData = [
   { browser: "chrome", visitors: 275, fill: "var(--color-chrome)", color: "hsl(var(--chart-1))" },
   { browser: "safari", visitors: 200, fill: "var(--color-safari)", color: "hsl(var(--chart-2))" },
   { browser: "firefox", visitors: 187, fill: "var(--color-firefox)", color: "hsl(var(--chart-3))" },
   { browser: "edge", visitors: 173, fill: "var(--color-edge)", color: "hsl(var(--chart-4))" },
-  { browser: "other", visitors: 90, fill: "var(--color-other)", color: "hsl(var(--chart-5))" },
 ];
 
-// Sort the data by visitors in ascending order (smallest to largest) it will make graph look better
-const sortedChartData = [...chartData].sort((a, b) => a.visitors - b.visitors);
+// Sort the data by visitors in DESCENDING order (largest to smallest) for better visual hierarchy
+const sortedChartData = [...chartData].sort((a, b) => b.visitors - a.visitors);
 
-// Configure the size increase between each pie ring
-const BASE_RADIUS = 150; // Starting radius for the smallest pie
-const SIZE_INCREMENT =0 ; // How much to increase radius for each subsequent pie
+// Configure the size increase between each donut ring - largest gets biggest ring
+// Mobile sizes (for screens < 640px)
+const BASE_RADIUS_MOBILE = 70;
+const SIZE_DECREMENT_MOBILE = 10;
+const INNER_RADIUS_MOBILE = 25;
+
+// Desktop sizes (for screens >= 640px)
+const BASE_RADIUS_DESKTOP = 115;
+const SIZE_DECREMENT_DESKTOP = 17;
+const INNER_RADIUS_DESKTOP = 40;
 
 const chartConfig = {
   visitors: {
@@ -65,20 +81,50 @@ interface IncreaseSizePieChartProps {
   clickedIndex?: number | null;
   onHover?: (index: number | null) => void;
   onClick?: (index: number) => void;
+  dashboardData?: DashboardData | null;
+  isLoading?: boolean;
 }
 
 export function IncreaseSizePieChart({ 
   activeIndex: externalActiveIndex, 
   clickedIndex: externalClickedIndex,
   onHover: externalOnHover,
-  onClick: externalOnClick
+  onClick: externalOnClick,
+  dashboardData,
+  isLoading = false
 }: IncreaseSizePieChartProps = {}) {
   const [internalActiveIndex, setInternalActiveIndex] = useState<number | null>(null);
-  const [internalClickedIndex, setInternalClickedIndex] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Use appropriate sizes based on screen size
+  const BASE_RADIUS = isMobile ? BASE_RADIUS_MOBILE : BASE_RADIUS_DESKTOP;
+  const SIZE_DECREMENT = isMobile ? SIZE_DECREMENT_MOBILE : SIZE_DECREMENT_DESKTOP;
+  const INNER_RADIUS = isMobile ? INNER_RADIUS_MOBILE : INNER_RADIUS_DESKTOP;
+
+  // Convert dashboard data to chart format
+  const chartDataFromJson = dashboardData ? dashboardData.browsers.map(browser => ({
+    browser: browser.id,
+    visitors: browser.visitors,
+    fill: `var(--color-${browser.id})`,
+    color: browser.color
+  })) : chartData;
+
+  // Sort the data by visitors in DESCENDING order (largest to smallest) for better visual hierarchy
+  const sortedChartData = [...chartDataFromJson].sort((a, b) => b.visitors - a.visitors);
 
   // Use external state if provided, otherwise use internal state
   const activeIndex = externalActiveIndex !== undefined ? externalActiveIndex : internalActiveIndex;
-  const clickedIndex = externalClickedIndex !== undefined ? externalClickedIndex : internalClickedIndex;
+  const clickedIndex = externalClickedIndex !== undefined ? externalClickedIndex : null;
 
   const handleMouseEnter = (index: number) => {
     if (externalOnHover) {
@@ -96,52 +142,46 @@ export function IncreaseSizePieChart({
     }
   };
 
-  const handleClick = (index: number) => {
-    if (externalOnClick) {
-      externalOnClick(index);
-    } else {
-      setInternalClickedIndex(internalClickedIndex === index ? null : index);
-    }
-  };
-
   return (
-    <div className="w-[400px] h-[400px] flex items-center justify-center">
-      <Card className="flex flex-col w-full h-full">
-        <CardHeader className="items-center pb-0">
-        <CardTitle>
-          
-          <Badge
-            variant="outline"
-            className="text-red-500 bg-red-500/10 border-none ml-2"
-          >
-           
-            
-          </Badge>
-        </CardTitle>
-        
-      </CardHeader>
-      <CardContent className="flex-1 pb-0 flex items-center justify-center">
+    <div className={`flex flex-col gap-1 sm:gap-2 w-full transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
+      <div className="text-center">
+        <h3 className={`font-semibold text-[10px] sm:text-xs md:text-sm lg:text-base ${isLoading ? 'animate-pulse bg-muted rounded h-4 w-24 mx-auto' : ''}`}>
+          {!isLoading && (dashboardData?.chartTitle || "Browser Usage")}
+        </h3>
+        <p className={`text-muted-foreground text-[9px] sm:text-[10px] md:text-xs mt-0.5 sm:mt-1 ${isLoading ? 'animate-pulse bg-muted rounded h-3 w-32 mx-auto mt-1' : ''}`}>
+          {!isLoading && (dashboardData?.chartPeriod || "January - June 2024")}
+        </p>
+      </div>
+      <div className={`w-full aspect-square max-w-full overflow-visible ${isLoading ? 'animate-pulse' : ''}`}>
         <ChartContainer
           config={chartConfig}
-         style={{ width: '400px', height: '400px', margin: 0 }}
-          className="[&_.recharts-text]:fill-background"
+          className="[&_.recharts-text]:fill-background w-full h-full"
         >
-          <PieChart>
+          <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
             <ChartTooltip
               content={<ChartTooltipContent nameKey="visitors" hideLabel />}
+              animationDuration={200}
+              cursor={false}
             />
             {sortedChartData.map((entry, index) => {
               const isActive = activeIndex === index || clickedIndex === index;
-              const radiusBoost = isActive ? 15 : 0;
+              const isAnyActive = activeIndex !== null || clickedIndex !== null;
               
               return (
               <Pie
                 key={`pie-${index}`}
                 data={[entry]}
-                innerRadius={0}
-                outerRadius={BASE_RADIUS + index * SIZE_INCREMENT + radiusBoost}
+                innerRadius={INNER_RADIUS}
+                outerRadius={BASE_RADIUS - index * SIZE_DECREMENT}
                 dataKey="visitors"
-                cornerRadius={0}
+                cornerRadius={6}
+                paddingAngle={2}
+                animationBegin={0}
+                animationDuration={800}
+                animationEasing="ease-out"
+                isAnimationActive={true}
+                activeIndex={-1}
+                activeShape={undefined}
                 startAngle={
                   // Calculate the percentage of total visitors up to current index
                   (sortedChartData
@@ -161,27 +201,19 @@ export function IncreaseSizePieChart({
               >
                 <Cell 
                   fill={entry.fill} 
-                  opacity={isActive ? 1 : 0.8}
+                  opacity={isAnyActive && !isActive ? 0.3 : 1}
                   onMouseEnter={() => handleMouseEnter(index)}
                   onMouseLeave={handleMouseLeave}
-                  onClick={() => handleClick(index)}
-                  style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                />
-                <LabelList
-                  dataKey="visitors"
-                  stroke="none"
-                  fontSize={12}
-                  fontWeight={500}
-                  fill="currentColor"
-                  formatter={(value: number) => value.toString()}
+                  style={{ 
+                    transition: 'all 0.3s ease',
+                  }}
                 />
               </Pie>
             )})}
 
           </PieChart>
         </ChartContainer>
-      </CardContent>
-    </Card>
+      </div>
     </div>
   );
 }
