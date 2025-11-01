@@ -153,3 +153,34 @@ WHAT I DID:
    - MutationObserver to detect theme changes
    - CSS variables resolved via getComputedStyle
    - Dynamic color application for flame animations
+
+19. Implemented Account Balance Line Chart with Credit/Debit Tracking
+   - Single glowing line chart showing running account balance over time
+   - Balance goes up with credits, down with debits
+   - Real data integration from dashboard-data.json:
+     * Each transaction includes credit and debit amounts
+     * Initial balance: $5,000
+     * Max balance ever reached: $12,500 (tracked globally)
+   - Three time periods with automatic data aggregation:
+     * Week: Daily view (Mon-Sun)
+     * Month: Weekly view (Week 1-4)
+     * Max: Monthly view (Jan-Jun, etc.)
+   - Responsive layout matching heatmap container:
+     * Chart height: 148px → 163px → 188px → 212px (exact sum of Income + Expenditure cards + gap)
+     * Chart on left, two stacked cards on right (Income/Expenditure)
+     * Cards: 73px → 80px → 92px → 104px each with 2-4px gap
+   - Compact chart design:
+     * Zero padding on Card container
+     * Minimal margins (2px all sides)
+     * Small axis labels (9px font, 2px margins)
+     * Fixed axis dimensions (XAxis: 20px height, YAxis: 35px width)
+   - Two summary cards on right:
+     * Income card (chart-2 color with glow border)
+     * Expenditure card (chart-5 color with glow border)
+   - Animated counters (1.5s duration) for all values
+   - Swipe gesture support (left/right, 50px minimum) synced with period selector
+   - Positioned below radio buttons (Week/Month/Max selector)
+   - Gaussian blur glow effect on balance line (stdDeviation: 8)
+   - Perfect alignment with heatmap container dimensions
+   - Recharts integration with responsive scaling
+
