@@ -21,6 +21,7 @@ export interface DashboardData {
   chartTitle: string;
   chartPeriod: string;
   categoryTitle: string;
+  streakDays?: number;
   browsers: Array<{
     id: string;
     name: string;
@@ -95,6 +96,30 @@ export function IncreaseSizePieChart({
 }: IncreaseSizePieChartProps = {}) {
   const [internalActiveIndex, setInternalActiveIndex] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [resolvedColors, setResolvedColors] = useState<string[]>([]);
+
+  // Resolve CSS variables to actual colors for SVG
+  useEffect(() => {
+    const updateColors = () => {
+      const root = document.documentElement;
+      const colors = [1, 2, 3, 4, 5].map(i => {
+        const cssVar = getComputedStyle(root).getPropertyValue(`--chart-${i}`).trim();
+        return cssVar || `oklch(0.5 0.2 ${i * 60})`;
+      });
+      setResolvedColors(colors);
+    };
+    
+    updateColors();
+    
+    // Listen for theme changes
+    const observer = new MutationObserver(updateColors);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style']
+    });
+    
+    return () => observer.disconnect();
+  }, []);
 
   // Detect screen size
   useEffect(() => {
@@ -112,11 +137,12 @@ export function IncreaseSizePieChart({
   const INNER_RADIUS = isMobile ? INNER_RADIUS_MOBILE : INNER_RADIUS_DESKTOP;
 
   // Convert dashboard data to chart format
-  const chartDataFromJson = dashboardData ? dashboardData.browsers.map(browser => ({
+  const chartDataFromJson = dashboardData ? dashboardData.browsers.map((browser, index) => ({
     browser: browser.id,
     visitors: browser.visitors,
     fill: `var(--color-${browser.id})`,
-    color: browser.color
+    // Use resolved colors for SVG rendering
+    color: resolvedColors[index] || `var(--chart-${index + 1})`
   })) : chartData;
 
   // Sort the data by visitors in DESCENDING order (largest to smallest) for better visual hierarchy
@@ -127,6 +153,9 @@ export function IncreaseSizePieChart({
   const clickedIndex = externalClickedIndex !== undefined ? externalClickedIndex : null;
 
   const handleMouseEnter = (index: number) => {
+    // Disable hover on mobile
+    if (isMobile) return;
+    
     if (externalOnHover) {
       externalOnHover(index);
     } else {
@@ -135,6 +164,9 @@ export function IncreaseSizePieChart({
   };
 
   const handleMouseLeave = () => {
+    // Disable hover on mobile
+    if (isMobile) return;
+    
     if (externalOnHover) {
       externalOnHover(null);
     } else {
@@ -158,11 +190,13 @@ export function IncreaseSizePieChart({
           className="[&_.recharts-text]:fill-background w-full h-full"
         >
           <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-            <ChartTooltip
-              content={<ChartTooltipContent nameKey="visitors" hideLabel />}
-              animationDuration={200}
-              cursor={false}
-            />
+            {!isMobile && (
+              <ChartTooltip
+                content={<ChartTooltipContent nameKey="visitors" hideLabel />}
+                animationDuration={200}
+                cursor={false}
+              />
+            )}
             {sortedChartData.map((entry, index) => {
               const isActive = activeIndex === index || clickedIndex === index;
               const isAnyActive = activeIndex !== null || clickedIndex !== null;
@@ -175,7 +209,7 @@ export function IncreaseSizePieChart({
                 outerRadius={BASE_RADIUS - index * SIZE_DECREMENT}
                 dataKey="visitors"
                 cornerRadius={6}
-                paddingAngle={2}
+                paddingAngle={6}
                 animationBegin={0}
                 animationDuration={800}
                 animationEasing="ease-out"
@@ -200,8 +234,10 @@ export function IncreaseSizePieChart({
                 }
               >
                 <Cell 
-                  fill={entry.fill} 
+                  fill={entry.color}
                   opacity={isAnyActive && !isActive ? 0.3 : 1}
+                  stroke="hsl(var(--border))"
+                  strokeWidth={2}
                   onMouseEnter={() => handleMouseEnter(index)}
                   onMouseLeave={handleMouseLeave}
                   style={{ 

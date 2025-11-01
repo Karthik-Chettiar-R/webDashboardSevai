@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { IncreaseSizePieChart, chartData, type DashboardData } from "./increase-size-pie-chart";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { StreakFireElement } from "./streak-fire-element";
+import { AnimatedCounter } from "./animated-counter";
 
 type DataPeriod = "weekly" | "monthly" | "max";
 
@@ -12,6 +15,12 @@ type CardType = {
   title: string;
   value: number;
   color: string;
+  isActive?: boolean;
+};
+
+type TransactionDay = {
+  date: string;
+  count: number;
 };
 
 const periodOrder: DataPeriod[] = ["weekly", "monthly", "max"];
@@ -25,6 +34,8 @@ export function PieChartWithLegend() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [clickedIndex, setClickedIndex] = useState<number | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [currentStreak, setCurrentStreak] = useState<number>(0);
+  const [transactionActivity, setTransactionActivity] = useState<TransactionDay[]>([]);
   const [dataPeriod, setDataPeriod] = useState<DataPeriod>("monthly");
   const [isLoading, setIsLoading] = useState(true);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -41,6 +52,8 @@ export function PieChartWithLegend() {
       .then(response => response.json())
       .then(data => {
         setDashboardData(data[dataPeriod]);
+        setCurrentStreak(data.currentStreak || 0);
+        setTransactionActivity(data.transactionActivity || []);
         setTimeout(() => setIsLoading(false), 300);
       })
       .catch(error => {
@@ -157,16 +170,31 @@ export function PieChartWithLegend() {
   });
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-4">
+    <motion.div 
+      className="w-full max-w-4xl mx-auto space-y-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Streak Fire Element - Integrated Component */}
+      <StreakFireElement streakDays={currentStreak} transactionActivity={transactionActivity} />
+      
       {/* Period Indicator with Swipe Navigation */}
-      <div className="flex items-center justify-center gap-4">
-        <button
+      <motion.div 
+        className="flex items-center justify-center gap-4"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <motion.button
           onClick={() => handlePeriodChange('prev')}
           className="p-2 rounded-full hover:bg-accent transition-colors"
           aria-label="Previous period"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
         >
           <ChevronLeft className="w-5 h-5" />
-        </button>
+        </motion.button>
         
         <div className="relative flex items-center gap-2">
           <div className="text-center min-w-[120px]">
@@ -178,7 +206,7 @@ export function PieChartWithLegend() {
           {/* Period Dots Indicator */}
           <div className="flex gap-1.5">
             {periodOrder.map((period) => (
-              <button
+              <motion.button
                 key={period}
                 onClick={() => setDataPeriod(period)}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
@@ -187,31 +215,46 @@ export function PieChartWithLegend() {
                     : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
                 }`}
                 aria-label={`Switch to ${periodLabels[period]}`}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
               />
             ))}
           </div>
         </div>
 
-        <button
+        <motion.button
           onClick={() => handlePeriodChange('next')}
           className="p-2 rounded-full hover:bg-accent transition-colors"
           aria-label="Next period"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
         >
           <ChevronRight className="w-5 h-5" />
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {/* Main Card with Swipe Support */}
-      <div
+      <motion.div
         ref={containerRef}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         className="touch-pan-y"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
       >
         <Card className="w-full overflow-hidden">
           <CardContent className="p-3 sm:p-4 md:p-5 lg:p-6">
-            <div className={`flex flex-row gap-3 sm:gap-4 md:gap-5 lg:gap-8 items-center transition-all duration-500 ease-out ${isLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={dataPeriod}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className={`flex flex-row gap-3 sm:gap-4 md:gap-5 lg:gap-8 items-center transition-all duration-500 ease-out ${isLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+              >
             {/* Pie Chart Section - Main Attraction */}
             <div className="shrink-0 w-[52%] sm:w-[60%] md:w-[420px] lg:w-[480px]">
               <IncreaseSizePieChart 
@@ -236,15 +279,14 @@ export function PieChartWithLegend() {
                     const isAnyActive = categoryCards.some(c => c.isActive);
                     
                     return (
-                      <div
+                      <motion.div
                         key={card.id}
-                        className={`group px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5 border border-border rounded-md sm:rounded-lg transition-all duration-300 cursor-pointer hover:bg-accent/50 active:scale-95 ${
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: isLoading ? 0.5 : (isAnyActive && !isActive ? 0.3 : 1), x: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className={`group px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5 border border-border rounded-md sm:rounded-lg cursor-pointer hover:bg-accent/50 active:scale-95 ${
                           isLoading ? 'animate-pulse bg-muted' : ''
                         }`}
-                        style={{
-                          opacity: isLoading ? 0.5 : (isAnyActive && !isActive ? 0.3 : 1),
-                          animationDelay: `${index * 100}ms`,
-                        }}
                         onClick={(e) => {
                           if (!isLoading) {
                             handleSynchronize(card.id);
@@ -281,21 +323,22 @@ export function PieChartWithLegend() {
                             </div>
                             {card.value !== undefined && (
                               <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground mt-0.5 sm:mt-1 ml-3 sm:ml-4 md:ml-5">
-                                {card.value.toLocaleString()} visitors
+                                <AnimatedCounter value={card.value} duration={1} /> visitors
                               </div>
                             )}
                           </>
                         )}
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
+          </AnimatePresence>
         </CardContent>
       </Card>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

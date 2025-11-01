@@ -1,0 +1,43 @@
+{
+  "name": "react-fire-loader",
+  "version": "1.0.0",
+  "description": "A customizable campfire loading animation component for React",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.build.json && npm run copy-files",
+    "copy-files": "powershell -Command \"Copy-Item -Path ./src/FireLoader.css -Destination ./dist/\"",
+    "serve": "vite preview",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.3",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5"
+  },
+  "keywords": [
+    "react",
+    "loader",
+    "loading",
+    "spinner",
+    "animation",
+    "campfire",
+    "fire"
+  ],
+  "author": "",
+  "license": "MIT"
+}
