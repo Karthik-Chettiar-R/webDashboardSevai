@@ -2,7 +2,7 @@ import type { AppProps } from 'next/app'
 import '../styles/globals.css'
 import '../styles/streak-fire-element.css'
 import { useEffect, useState } from 'react'
-import { generateRandomTheme, applyTheme, type Theme } from '@/lib/theme-generator'
+import { generateRandomTheme, applyTheme, type Theme } from '../lib/theme-generator'
 import Head from 'next/head'
 
 export default function App({ Component, pageProps }: AppProps) {
