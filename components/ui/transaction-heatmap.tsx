@@ -55,24 +55,24 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
       const isMobile = window.innerWidth < 768;
       const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
       
-      // Calculate optimal cell size
+      // Calculate optimal cell size - FURTHER REDUCED heights to fit container
       let cellWidth, cellHeight, gap;
       
       if (isMobile) {
-        // Mobile: smaller cells
-        cellWidth = Math.max(10, Math.floor(containerWidth / 18)); // At least 10px
-        cellHeight = Math.max(10, Math.floor(containerHeight / 10)); // At least 10px for 7 days
+        // Mobile: smaller cells with reduced height
+        cellWidth = Math.max(10, Math.floor(containerWidth / 18));
+        cellHeight = Math.max(7, Math.floor(containerHeight / 13)); // Further reduced to fit better
         gap = 2;
       } else if (isTablet) {
-        // Tablet: medium cells
+        // Tablet: medium cells with reduced height
         cellWidth = Math.max(14, Math.floor(containerWidth / 16));
-        cellHeight = Math.max(14, Math.floor(containerHeight / 9));
-        gap = 3;
+        cellHeight = Math.max(8, Math.floor(containerHeight / 12)); // Further reduced
+        gap = 2;
       } else {
-        // Desktop: larger cells
+        // Desktop: larger cells with reduced height
         cellWidth = Math.max(16, Math.floor(containerWidth / 14));
-        cellHeight = Math.max(16, Math.floor(containerHeight / 8));
-        gap = 3;
+        cellHeight = Math.max(10, Math.floor(containerHeight / 11)); // Further reduced from 12
+        gap = 2;
       }
       
       setCellSize({ width: cellWidth, height: cellHeight, gap });
@@ -95,19 +95,25 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
 
   const heatmapData = useMemo(() => {
     const today = new Date();
+    today.setHours(23, 59, 59, 999);
     
-    // End at the current week (end of Sunday of current week or today if it's before Sunday)
-    const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
-    const endDate = new Date(today);
-    
-    // If today is not Sunday, set endDate to today
-    // If today is Sunday, include today
-    endDate.setHours(23, 59, 59, 999);
-    
-    // Calculate start date based on weeks to show
-    const startDate = new Date(endDate);
-    startDate.setDate(startDate.getDate() - (weeksToShow * 7) + 1); // +1 to include the start day
+    // Calculate the start date: go back the specified number of weeks
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - (weeksToShow * 7 - 1));
     startDate.setHours(0, 0, 0, 0);
+    
+    // Adjust startDate to the previous Sunday to align weeks properly
+    const startDayOfWeek = startDate.getDay();
+    if (startDayOfWeek !== 0) {
+      startDate.setDate(startDate.getDate() - startDayOfWeek);
+    }
+    
+    // Calculate end date - the Saturday of the current week
+    const endDate = new Date(today);
+    const todayDayOfWeek = today.getDay();
+    const daysUntilSaturday = 6 - todayDayOfWeek;
+    endDate.setDate(today.getDate() + daysUntilSaturday);
+    endDate.setHours(23, 59, 59, 999);
 
     // Create a map for quick lookup
     const dataMap = new Map(data.map(d => [d.date, d.count]));
@@ -118,37 +124,32 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
     
     while (currentDate <= endDate) {
       const dateStr = currentDate.toISOString().split('T')[0];
-      const count = dataMap.get(dateStr) || 0;
+      const count = dataMap.get(dateStr) ?? 0;
+      
+      // Mark future dates as -1 (empty/padding)
+      const isFuture = currentDate > today;
+      
       days.push({
         date: new Date(currentDate),
-        count,
-        dateStr
+        count: isFuture ? -1 : count,
+        dateStr: isFuture ? '' : dateStr
       });
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    // Group by weeks (Sunday to Saturday)
+    // Group by weeks (Sunday to Saturday) - each week should have exactly 7 days
     const weeks: typeof days[] = [];
-    let currentWeek: typeof days = [];
-    
-    days.forEach((day, index) => {
-      if (index === 0) {
-        // Pad the first week with empty days if it doesn't start on Sunday
-        const dayOfWeek = day.date.getDay();
-        for (let i = 0; i < dayOfWeek; i++) {
-          currentWeek.push({ date: new Date(0), count: -1, dateStr: '' });
+    for (let i = 0; i < days.length; i += 7) {
+      const week = days.slice(i, i + 7);
+      // Only add complete weeks or the last partial week
+      if (week.length > 0) {
+        // Pad incomplete weeks to 7 days
+        while (week.length < 7) {
+          week.push({ date: new Date(0), count: -1, dateStr: '' });
         }
+        weeks.push(week);
       }
-      
-      currentWeek.push(day);
-      
-      // End week on Saturday or if it's the last day
-      if (day.date.getDay() === 6 || index === days.length - 1) {
-        // Don't pad the last week - just push what we have (ends at today)
-        weeks.push([...currentWeek]);
-        currentWeek = [];
-      }
-    });
+    }
 
     return { weeks, maxCount: Math.max(...data.map(d => d.count), 1) };
   }, [data, weeksToShow]);
@@ -179,10 +180,39 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
     }
     
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    setTooltipPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10
-    });
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Responsive tooltip sizing
+    const isMobile = viewportWidth < 768;
+    const tooltipWidth = isMobile ? Math.min(180, viewportWidth - 40) : 200;
+    const tooltipHeight = 80;
+    const padding = isMobile ? 10 : 20;
+    
+    let x = rect.left + rect.width / 2;
+    let y = rect.top - 10;
+    let placeBelow = false;
+    
+    // Boundary checks and adjustments
+    // Check if tooltip goes off left edge
+    if (x - tooltipWidth / 2 < padding) {
+      x = tooltipWidth / 2 + padding;
+    }
+    // Check if tooltip goes off right edge
+    if (x + tooltipWidth / 2 > viewportWidth - padding) {
+      x = viewportWidth - tooltipWidth / 2 - padding;
+    }
+    // Check if tooltip goes off top edge (place below cell instead)
+    if (y - tooltipHeight < padding) {
+      y = rect.bottom + 10;
+      placeBelow = true;
+    }
+    // Check if tooltip goes off bottom edge when placed below
+    if (placeBelow && y + tooltipHeight > viewportHeight - padding) {
+      y = viewportHeight - tooltipHeight - padding;
+    }
+    
+    setTooltipPosition({ x, y });
     
     // Toggle tooltip on click (for mobile)
     if (selectedDay?.date === day.dateStr) {
@@ -200,6 +230,11 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
   const handleDayHover = (day: { date: Date; count: number; dateStr: string }, event: React.MouseEvent) => {
     if (day.count === -1) return; // Don't show tooltip for padding cells
     
+    // Don't handle hover on mobile devices (let click handle it)
+    const viewportWidth = window.innerWidth;
+    const isMobile = viewportWidth < 768;
+    if (isMobile) return;
+    
     // Clear any existing timer on hover (desktop behavior - no auto-dismiss)
     if (dismissTimerRef.current) {
       clearTimeout(dismissTimerRef.current);
@@ -207,10 +242,34 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
     }
     
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    setTooltipPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10
-    });
+    const viewportHeight = window.innerHeight;
+    
+    // Responsive tooltip sizing
+    const tooltipWidth = 200;
+    const tooltipHeight = 80;
+    const padding = 20;
+    
+    let x = rect.left + rect.width / 2;
+    let y = rect.top - 10;
+    let placeBelow = false;
+    
+    // Boundary checks
+    if (x - tooltipWidth / 2 < padding) {
+      x = tooltipWidth / 2 + padding;
+    }
+    if (x + tooltipWidth / 2 > viewportWidth - padding) {
+      x = viewportWidth - tooltipWidth / 2 - padding;
+    }
+    if (y - tooltipHeight < padding) {
+      y = rect.bottom + 10;
+      placeBelow = true;
+    }
+    // Check if tooltip goes off bottom edge when placed below
+    if (placeBelow && y + tooltipHeight > viewportHeight - padding) {
+      y = viewportHeight - tooltipHeight - padding;
+    }
+    
+    setTooltipPosition({ x, y });
     setSelectedDay({ date: day.dateStr, count: day.count });
   };
 
@@ -250,23 +309,28 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-  // Get month labels
+  // Get month labels - align with the 1st day of each month
   const getMonthLabels = () => {
-    const labels: { month: string; weekIndex: number }[] = [];
-    let currentMonth = -1;
+    const labels: { month: string; weekIndex: number; dayIndexInWeek: number }[] = [];
+    let seenMonths = new Set<number>();
     
     heatmapData.weeks.forEach((week, weekIndex) => {
-      const firstValidDay = week.find(d => d.count !== -1);
-      if (firstValidDay) {
-        const month = firstValidDay.date.getMonth();
-        if (month !== currentMonth) {
-          labels.push({
-            month: monthNames[month],
-            weekIndex
-          });
-          currentMonth = month;
+      week.forEach((day, dayIndex) => {
+        if (day.count !== -1 && day.dateStr) {
+          const month = day.date.getMonth();
+          const dayOfMonth = day.date.getDate();
+          
+          // Check if this is the 1st day of a month we haven't seen yet
+          if (dayOfMonth === 1 && !seenMonths.has(month)) {
+            labels.push({
+              month: monthNames[month],
+              weekIndex,
+              dayIndexInWeek: dayIndex
+            });
+            seenMonths.add(month);
+          }
         }
-      }
+      });
     });
     
     return labels;
@@ -275,22 +339,30 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
   const monthLabels = getMonthLabels();
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center" onClick={handleClickOutside}>
-      <div className="w-full h-full overflow-x-auto overflow-y-hidden">
-        <div className="inline-flex flex-col min-w-full h-full py-2 relative justify-center">
+    <>
+      <div ref={containerRef} className="w-full h-full flex items-center" onClick={handleClickOutside}>
+        <div className="w-full h-full overflow-x-auto overflow-y-hidden">
+          <div className="inline-flex flex-col min-w-full h-full py-2 relative justify-center">
           {/* Month labels */}
-          <div className="flex gap-0.5 mb-2 ml-5 md:ml-6">
-            {monthLabels.map((label, idx) => (
-              <div
-                key={idx}
-                className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground font-medium"
-                style={{
-                  marginLeft: idx === 0 ? 0 : `${(label.weekIndex - (monthLabels[idx - 1]?.weekIndex || 0)) * 13}px`
-                }}
-              >
-                {label.month}
-              </div>
-            ))}
+          <div className="flex mb-3 md:mb-4 lg:mb-5 ml-5 md:ml-6 relative h-6">
+            {monthLabels.map((label, idx) => {
+              // Calculate absolute position from the start
+              // Each week column = (cellSize.width + cellSize.gap)
+              // Position month label above the exact column where day 1 appears
+              const absoluteLeft = label.weekIndex * (cellSize.width + cellSize.gap);
+              
+              return (
+                <div
+                  key={idx}
+                  className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground font-medium absolute"
+                  style={{
+                    left: `${absoluteLeft}px`,
+                  }}
+                >
+                  {label.month}
+                </div>
+              );
+            })}
           </div>
 
             <div className="flex gap-1">
@@ -326,7 +398,9 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
                       <motion.div
                         key={dayIdx}
                         data-heatmap-cell
-                        className="rounded-sm border border-border/20 cursor-pointer relative"
+                        className={`rounded-sm border cursor-pointer relative ${
+                          isActive ? 'border-primary/80' : 'border-border/20'
+                        }`}
                         style={{
                           backgroundColor: intensity,
                           width: `${cellSize.width}px`,
@@ -337,8 +411,12 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         onClick={(e) => handleDayClick(day, e)}
                         onMouseEnter={(e) => handleDayHover(day, e)}
-                        onMouseLeave={() => day.count === -1 ? null : setSelectedDay(null)}
-                        animate={isActive ? { scale: 1.3, borderColor: 'hsl(var(--primary))' } : {}}
+                        onMouseLeave={() => {
+                          if (day.count === -1) return;
+                          const isMobile = window.innerWidth < 768;
+                          if (!isMobile) setSelectedDay(null);
+                        }}
+                        animate={isActive ? { scale: 1.3 } : {}}
                       />
                     );
                   })}
@@ -346,30 +424,11 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
               ))}
             </div>
           </div>
-
-          {/* Legend */}
-          <div className="flex items-center justify-end gap-2 mt-3 text-xs text-muted-foreground">
-            <span className="text-[9px] md:text-[10px]">Less</span>
-            <div className="flex" style={{ gap: `${Math.max(2, cellSize.gap - 1)}px` }}>
-              {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-sm border border-border/20"
-                  style={{
-                    width: `${cellSize.width}px`,
-                    height: `${cellSize.height}px`,
-                    backgroundColor: idx === 0 ? 'hsl(var(--muted))' : baseColor,
-                    opacity: idx === 0 ? 1 : ratio
-                  }}
-                />
-              ))}
-            </div>
-            <span className="text-[9px] md:text-[10px]">More</span>
           </div>
         </div>
       </div>
 
-      {/* Tooltip */}
+      {/* Tooltip - Rendered outside overflow container for better visibility */}
       <AnimatePresence>
         {selectedDay && (
           <motion.div
@@ -377,26 +436,33 @@ export function TransactionHeatmap({ data }: TransactionHeatmapProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 5 }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            className="fixed z-9999 px-3 py-2 text-sm font-medium rounded-lg shadow-2xl pointer-events-none backdrop-blur-sm"
+            className="fixed pointer-events-none backdrop-blur-md px-3 py-2 sm:px-4 sm:py-3"
             style={{
               left: `${tooltipPosition.x}px`,
               top: `${tooltipPosition.y}px`,
-              transform: 'translate(-50%, -100%)',
+              transform: tooltipPosition.y > window.innerHeight / 2 ? 'translate(-50%, -100%)' : 'translate(-50%, 20px)',
+              zIndex: 99999,
               background: 'hsl(var(--popover) / 0.98)',
-              border: '2px solid hsl(var(--primary) / 0.3)',
+              border: '2px solid hsl(var(--primary) / 0.5)',
               color: 'hsl(var(--popover-foreground))',
-              boxShadow: '0 10px 40px -10px rgba(0,0,0,0.5)',
+              boxShadow: '0 20px 60px -10px rgba(0,0,0,0.7), 0 0 0 1px hsl(var(--primary) / 0.1)',
+              borderRadius: '0.75rem',
+              minWidth: '120px',
+              maxWidth: 'calc(100vw - 40px)',
+              width: 'max-content',
             }}
           >
-            <div className="text-center whitespace-nowrap">
-              <div className="font-bold text-sm">{selectedDay.date}</div>
-              <div className="text-primary font-semibold mt-1">
+            <div className="text-center">
+              <div className="font-bold text-xs sm:text-sm md:text-base whitespace-nowrap overflow-hidden text-ellipsis">
+                {selectedDay.date}
+              </div>
+              <div className="text-primary font-semibold mt-1 text-[10px] sm:text-xs md:text-sm whitespace-nowrap">
                 {selectedDay.count} transaction{selectedDay.count !== 1 ? 's' : ''}
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

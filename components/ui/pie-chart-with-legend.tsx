@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { StreakFireElement } from "./streak-fire-element";
 import { AnimatedCounter } from "./animated-counter";
+import { CreditDebitChart } from "./credit-debit-chart";
 
 type DataPeriod = "weekly" | "monthly" | "max";
 
@@ -231,6 +232,18 @@ export function PieChartWithLegend() {
         >
           <ChevronRight className="w-5 h-5" />
         </motion.button>
+      </motion.div>
+
+      {/* Credit/Debit Chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.25 }}
+      >
+        <CreditDebitChart 
+          period={dataPeriod === 'weekly' ? 'week' : dataPeriod === 'monthly' ? 'month' : 'max'} 
+          onPeriodChange={handlePeriodChange}
+        />
       </motion.div>
 
       {/* Main Card with Swipe Support */}

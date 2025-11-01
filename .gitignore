@@ -5,7 +5,7 @@ node_modules/
 
 # Testing
 coverage/
-
+git_cmd.txt
 # Next.js build outputs
 .next/
 out/

@@ -26,277 +26,46 @@ interface StreakFireElementProps {
 }
 
 const flameConfigs: FlameConfig[] = [
-  // Red Flames - All 4 stages (Days 1-100)
-  {
-    minDays: 1,
-    maxDays: 25,
-    stage: 1,
-    flameColor: "#DC143C",
-    glowColor: "#8B0000",
-    emberColor: "#ff4500",
-  },
-  {
-    minDays: 26,
-    maxDays: 50,
-    stage: 2,
-    flameColor: "#DC143C",
-    glowColor: "#8B0000",
-    emberColor: "#ff4500",
-  },
-  {
-    minDays: 51,
-    maxDays: 75,
-    stage: 3,
-    flameColor: "#DC143C",
-    glowColor: "#8B0000",
-    emberColor: "#ff4500",
-  },
-  {
-    minDays: 76,
-    maxDays: 100,
-    stage: 4,
-    flameColor: "#DC143C",
-    glowColor: "#8B0000",
-    emberColor: "#ff4500",
-  },
-  
-  // Orange Flames - All 4 stages (Days 101-200)
-  {
-    minDays: 101,
-    maxDays: 125,
-    stage: 1,
-    flameColor: "#FF6347",
-    glowColor: "#DC143C",
-    emberColor: "#ff7700",
-  },
-  {
-    minDays: 126,
-    maxDays: 150,
-    stage: 2,
-    flameColor: "#FF6347",
-    glowColor: "#DC143C",
-    emberColor: "#ff7700",
-  },
-  {
-    minDays: 151,
-    maxDays: 175,
-    stage: 3,
-    flameColor: "#FF6347",
-    glowColor: "#DC143C",
-    emberColor: "#ff7700",
-  },
-  {
-    minDays: 176,
-    maxDays: 200,
-    stage: 4,
-    flameColor: "#FF6347",
-    glowColor: "#DC143C",
-    emberColor: "#ff7700",
-  },
-  
-  // Yellow Flames - All 4 stages (Days 201-300)
-  {
-    minDays: 201,
-    maxDays: 225,
-    stage: 1,
-    flameColor: "#FFA500",
-    glowColor: "#FF6347",
-    emberColor: "#ffaa00",
-  },
-  {
-    minDays: 226,
-    maxDays: 250,
-    stage: 2,
-    flameColor: "#FFA500",
-    glowColor: "#FF6347",
-    emberColor: "#ffaa00",
-  },
-  {
-    minDays: 251,
-    maxDays: 275,
-    stage: 3,
-    flameColor: "#FFA500",
-    glowColor: "#FF6347",
-    emberColor: "#ffaa00",
-  },
-  {
-    minDays: 276,
-    maxDays: 300,
-    stage: 4,
-    flameColor: "#FFA500",
-    glowColor: "#FF6347",
-    emberColor: "#ffaa00",
-  },
-  
-  // Green Flames - All 4 stages (Days 301-400)
-  {
-    minDays: 301,
-    maxDays: 325,
-    stage: 1,
-    flameColor: "#9ACD32",
-    glowColor: "#7CFC00",
-    emberColor: "#ADFF2F",
-  },
-  {
-    minDays: 326,
-    maxDays: 350,
-    stage: 2,
-    flameColor: "#9ACD32",
-    glowColor: "#7CFC00",
-    emberColor: "#ADFF2F",
-  },
-  {
-    minDays: 351,
-    maxDays: 375,
-    stage: 3,
-    flameColor: "#9ACD32",
-    glowColor: "#7CFC00",
-    emberColor: "#ADFF2F",
-  },
-  {
-    minDays: 376,
-    maxDays: 400,
-    stage: 4,
-    flameColor: "#9ACD32",
-    glowColor: "#7CFC00",
-    emberColor: "#ADFF2F",
-  },
-  
-  // White Flames - All 4 stages (Days 401-500)
-  {
-    minDays: 401,
-    maxDays: 425,
-    stage: 1,
-    flameColor: "#F0F8FF",
-    glowColor: "#E6E6FA",
-    emberColor: "#FFFFFF",
-  },
-  {
-    minDays: 426,
-    maxDays: 450,
-    stage: 2,
-    flameColor: "#F0F8FF",
-    glowColor: "#E6E6FA",
-    emberColor: "#FFFFFF",
-  },
-  {
-    minDays: 451,
-    maxDays: 475,
-    stage: 3,
-    flameColor: "#F0F8FF",
-    glowColor: "#E6E6FA",
-    emberColor: "#FFFFFF",
-  },
-  {
-    minDays: 476,
-    maxDays: 500,
-    stage: 4,
-    flameColor: "#F0F8FF",
-    glowColor: "#E6E6FA",
-    emberColor: "#FFFFFF",
-  },
-  
-  // Blue Flames - All 4 stages (Days 501-600)
-  {
-    minDays: 501,
-    maxDays: 525,
-    stage: 1,
-    flameColor: "#1E90FF",
-    glowColor: "#4169E1",
-    emberColor: "#00BFFF",
-  },
-  {
-    minDays: 526,
-    maxDays: 550,
-    stage: 2,
-    flameColor: "#1E90FF",
-    glowColor: "#4169E1",
-    emberColor: "#00BFFF",
-  },
-  {
-    minDays: 551,
-    maxDays: 575,
-    stage: 3,
-    flameColor: "#1E90FF",
-    glowColor: "#4169E1",
-    emberColor: "#00BFFF",
-  },
-  {
-    minDays: 576,
-    maxDays: 600,
-    stage: 4,
-    flameColor: "#1E90FF",
-    glowColor: "#4169E1",
-    emberColor: "#00BFFF",
-  },
-  
-  // Violet Flames - All 4 stages (Days 601-700)
-  {
-    minDays: 601,
-    maxDays: 625,
-    stage: 1,
-    flameColor: "#8B00FF",
-    glowColor: "#9400D3",
-    emberColor: "#DA70D6",
-  },
-  {
-    minDays: 626,
-    maxDays: 650,
-    stage: 2,
-    flameColor: "#8B00FF",
-    glowColor: "#9400D3",
-    emberColor: "#DA70D6",
-  },
-  {
-    minDays: 651,
-    maxDays: 675,
-    stage: 3,
-    flameColor: "#8B00FF",
-    glowColor: "#9400D3",
-    emberColor: "#DA70D6",
-  },
-  {
-    minDays: 676,
-    maxDays: 700,
-    stage: 4,
-    flameColor: "#8B00FF",
-    glowColor: "#9400D3",
-    emberColor: "#DA70D6",
-  },
-  
-  // Black Flames - All 4 stages (Days 701+)
-  {
-    minDays: 701,
-    maxDays: 750,
-    stage: 1,
-    flameColor: "#1C1C1C",
-    glowColor: "#000000",
-    emberColor: "#2F4F4F",
-  },
-  {
-    minDays: 751,
-    maxDays: 800,
-    stage: 2,
-    flameColor: "#1C1C1C",
-    glowColor: "#000000",
-    emberColor: "#2F4F4F",
-  },
-  {
-    minDays: 801,
-    maxDays: 900,
-    stage: 3,
-    flameColor: "#1C1C1C",
-    glowColor: "#000000",
-    emberColor: "#2F4F4F",
-  },
-  {
-    minDays: 901,
-    maxDays: Infinity,
-    stage: 4,
-    flameColor: "#1C1C1C",
-    glowColor: "#000000",
-    emberColor: "#2F4F4F",
-  }
+  // Red (1-100)
+  { minDays: 1, maxDays: 25, stage: 1, flameColor: "#DC143C", glowColor: "#8B0000", emberColor: "#ff4500" },
+  { minDays: 26, maxDays: 50, stage: 2, flameColor: "#DC143C", glowColor: "#8B0000", emberColor: "#ff4500" },
+  { minDays: 51, maxDays: 75, stage: 3, flameColor: "#DC143C", glowColor: "#8B0000", emberColor: "#ff4500" },
+  { minDays: 76, maxDays: 100, stage: 4, flameColor: "#DC143C", glowColor: "#8B0000", emberColor: "#ff4500" },
+  // Orange (101-200)
+  { minDays: 101, maxDays: 125, stage: 1, flameColor: "#FF6347", glowColor: "#DC143C", emberColor: "#ff7700" },
+  { minDays: 126, maxDays: 150, stage: 2, flameColor: "#FF6347", glowColor: "#DC143C", emberColor: "#ff7700" },
+  { minDays: 151, maxDays: 175, stage: 3, flameColor: "#FF6347", glowColor: "#DC143C", emberColor: "#ff7700" },
+  { minDays: 176, maxDays: 200, stage: 4, flameColor: "#FF6347", glowColor: "#DC143C", emberColor: "#ff7700" },
+  // Yellow (201-300)
+  { minDays: 201, maxDays: 225, stage: 1, flameColor: "#FFA500", glowColor: "#FF6347", emberColor: "#ffaa00" },
+  { minDays: 226, maxDays: 250, stage: 2, flameColor: "#FFA500", glowColor: "#FF6347", emberColor: "#ffaa00" },
+  { minDays: 251, maxDays: 275, stage: 3, flameColor: "#FFA500", glowColor: "#FF6347", emberColor: "#ffaa00" },
+  { minDays: 276, maxDays: 300, stage: 4, flameColor: "#FFA500", glowColor: "#FF6347", emberColor: "#ffaa00" },
+  // Green (301-400)
+  { minDays: 301, maxDays: 325, stage: 1, flameColor: "#9ACD32", glowColor: "#7CFC00", emberColor: "#ADFF2F" },
+  { minDays: 326, maxDays: 350, stage: 2, flameColor: "#9ACD32", glowColor: "#7CFC00", emberColor: "#ADFF2F" },
+  { minDays: 351, maxDays: 375, stage: 3, flameColor: "#9ACD32", glowColor: "#7CFC00", emberColor: "#ADFF2F" },
+  { minDays: 376, maxDays: 400, stage: 4, flameColor: "#9ACD32", glowColor: "#7CFC00", emberColor: "#ADFF2F" },
+  // White (401-500)
+  { minDays: 401, maxDays: 425, stage: 1, flameColor: "#F0F8FF", glowColor: "#E6E6FA", emberColor: "#FFFFFF" },
+  { minDays: 426, maxDays: 450, stage: 2, flameColor: "#F0F8FF", glowColor: "#E6E6FA", emberColor: "#FFFFFF" },
+  { minDays: 451, maxDays: 475, stage: 3, flameColor: "#F0F8FF", glowColor: "#E6E6FA", emberColor: "#FFFFFF" },
+  { minDays: 476, maxDays: 500, stage: 4, flameColor: "#F0F8FF", glowColor: "#E6E6FA", emberColor: "#FFFFFF" },
+  // Blue (501-600)
+  { minDays: 501, maxDays: 525, stage: 1, flameColor: "#1E90FF", glowColor: "#4169E1", emberColor: "#00BFFF" },
+  { minDays: 526, maxDays: 550, stage: 2, flameColor: "#1E90FF", glowColor: "#4169E1", emberColor: "#00BFFF" },
+  { minDays: 551, maxDays: 575, stage: 3, flameColor: "#1E90FF", glowColor: "#4169E1", emberColor: "#00BFFF" },
+  { minDays: 576, maxDays: 600, stage: 4, flameColor: "#1E90FF", glowColor: "#4169E1", emberColor: "#00BFFF" },
+  // Violet (601-700)
+  { minDays: 601, maxDays: 625, stage: 1, flameColor: "#8B00FF", glowColor: "#9400D3", emberColor: "#DA70D6" },
+  { minDays: 626, maxDays: 650, stage: 2, flameColor: "#8B00FF", glowColor: "#9400D3", emberColor: "#DA70D6" },
+  { minDays: 651, maxDays: 675, stage: 3, flameColor: "#8B00FF", glowColor: "#9400D3", emberColor: "#DA70D6" },
+  { minDays: 676, maxDays: 700, stage: 4, flameColor: "#8B00FF", glowColor: "#9400D3", emberColor: "#DA70D6" },
+  // Black (701+)
+  { minDays: 701, maxDays: 750, stage: 1, flameColor: "#1C1C1C", glowColor: "#000000", emberColor: "#2F4F4F" },
+  { minDays: 751, maxDays: 800, stage: 2, flameColor: "#1C1C1C", glowColor: "#000000", emberColor: "#2F4F4F" },
+  { minDays: 801, maxDays: 900, stage: 3, flameColor: "#1C1C1C", glowColor: "#000000", emberColor: "#2F4F4F" },
+  { minDays: 901, maxDays: Infinity, stage: 4, flameColor: "#1C1C1C", glowColor: "#000000", emberColor: "#2F4F4F" },
 ];
 
 function getFlameConfig(days: number): FlameConfig {
@@ -347,106 +116,94 @@ export function StreakFireElement({ streakDays = 0, transactionActivity = [] }: 
   } as React.CSSProperties;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-    >
-      <Card className="w-full max-w-4xl mx-auto overflow-hidden">
-        <CardContent className="p-3 sm:p-6 md:p-5 lg:p-6">
-          <div className="flex flex-row items-center gap-6 sm:gap-8 md:gap-10 lg:gap-12">
-            
-            {/* Left Section - Fire Animation in Square Container */}
-            <motion.div 
-              className="flex flex-col items-center justify-center gap-3 shrink-0"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-            >
-              {/* Square Fire Container */}
+    <Card className="w-full max-w-4xl mx-auto overflow-hidden">
+      <CardContent className="p-1.5 sm:p-2 md:p-2.5 lg:p-3 flex flex-row items-start gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+        
+        {/* Left Column - Fire Animation and Streak Number */}
+        <div className="flex flex-col gap-2 shrink-0">
+          {/* Flame Container - Square */}
+          <motion.div 
+                className="w-[100px] h-[100px] sm:w-[110px] sm:h-[110px] md:w-[130px] md:h-[130px] lg:w-[150px] lg:h-[150px] flex items-center justify-center rounded-lg border border-border/30 bg-muted/20 overflow-visible"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
+              >
+                <div 
+                  className={`streak-campfire ${config.stage === 0 ? "pre-ignition" : ""}`}
+                  style={colorStyles}
+                >
+                  <div className="streak-fire">
+                    {config.stage >= 4 && (
+                      <div className="streak-fire-left">
+                        <div className="streak-main-fire" />
+                        <div className="streak-particle-fire" />
+                      </div>
+                    )}
+                    {config.stage >= 1 && (
+                      <div className="streak-fire-center">
+                        <div className="streak-main-fire" />
+                        <div className="streak-particle-fire" />
+                      </div>
+                    )}
+                    {config.stage >= 3 && (
+                      <div className="streak-fire-right">
+                        <div className="streak-main-fire" />
+                        <div className="streak-particle-fire" />
+                      </div>
+                    )}
+                    {config.stage >= 2 && (
+                      <div className="streak-fire-bottom">
+                        <div className="streak-main-fire" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="streak-wood">
+                    <div className="streak-wood-piece streak-wood-1" />
+                    <div className="streak-wood-piece streak-wood-2" />
+                    <div className="streak-wood-piece streak-wood-3" />
+                    <div className={`streak-ember streak-ember-1 ${config.stage === 0 ? "pre-ignition-ember" : ""}`} />
+                    <div className={`streak-ember streak-ember-2 ${config.stage === 0 ? "pre-ignition-ember" : ""}`} />
+                    <div className={`streak-ember streak-ember-3 ${config.stage === 0 ? "pre-ignition-ember" : ""}`} />
+                    {config.stage === 0 && (
+                      <>
+                        <div className="streak-ember pre-ignition-ember streak-ember-4" />
+                        <div className="streak-ember pre-ignition-ember streak-ember-5" />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+              
+              {/* Streak Number Container - Rectangular */}
               <motion.div 
-                className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 flex items-center justify-center rounded-lg border border-border/30 bg-muted/20"
-                whileHover={{ scale: 1.05, borderColor: 'hsl(var(--primary) / 0.5)' }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="w-[100px] sm:w-[110px] md:w-[130px] lg:w-[150px] h-[50px] sm:h-[55px] md:h-[60px] lg:h-[65px] flex flex-col items-center justify-center rounded-lg border border-border/30 bg-muted/20 overflow-hidden"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
               >
-              <div 
-                className={`streak-campfire ${config.stage === 0 ? "pre-ignition" : ""}`}
-                style={colorStyles}
-              >
-                <div className="streak-fire">
-                  {config.stage >= 4 && (
-                    <div className="streak-fire-left">
-                      <div className="streak-main-fire" />
-                      <div className="streak-particle-fire" />
-                    </div>
-                  )}
-                  {config.stage >= 1 && (
-                    <div className="streak-fire-center">
-                      <div className="streak-main-fire" />
-                      <div className="streak-particle-fire" />
-                    </div>
-                  )}
-                  {config.stage >= 3 && (
-                    <div className="streak-fire-right">
-                      <div className="streak-main-fire" />
-                      <div className="streak-particle-fire" />
-                    </div>
-                  )}
-                  {config.stage >= 2 && (
-                    <div className="streak-fire-bottom">
-                      <div className="streak-main-fire" />
-                    </div>
-                  )}
+                <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-none" style={{ color: config.flameColor }}>
+                  <AnimatedCounter value={displayDays} duration={1.5} />
                 </div>
-                <div className="streak-wood">
-                  <div className="streak-wood-piece streak-wood-1" />
-                  <div className="streak-wood-piece streak-wood-2" />
-                  <div className="streak-wood-piece streak-wood-3" />
-                  <div className={`streak-ember streak-ember-1 ${config.stage === 0 ? "pre-ignition-ember" : ""}`} />
-                  <div className={`streak-ember streak-ember-2 ${config.stage === 0 ? "pre-ignition-ember" : ""}`} />
-                  <div className={`streak-ember streak-ember-3 ${config.stage === 0 ? "pre-ignition-ember" : ""}`} />
-                  {config.stage === 0 && (
-                    <>
-                      <div className="streak-ember pre-ignition-ember streak-ember-4" />
-                      <div className="streak-ember pre-ignition-ember streak-ember-5" />
-                    </>
-                  )}
+                <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground mt-1">
+                  {displayDays === 1 ? "Day" : "Days"}
                 </div>
-              </div>
-            </motion.div>
-            
-            {/* Day Counter - Separate from Fire */}
-            <motion.div 
-              className="text-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold" style={{ color: config.flameColor }}>
-                <AnimatedCounter value={displayDays} duration={1.5} />
-              </div>
-              <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-1">
-                {displayDays === 1 ? "Day" : "Days"}
-              </div>
-            </motion.div>
-          </motion.div>
+              </motion.div>
+            </div>
 
           {/* Right Section - Transaction Activity Heatmap */}
           <motion.div 
-            className="flex-1 w-full min-w-0 flex items-center"
+            className="flex-1 min-w-0 h-[152px] sm:h-[167px] md:h-[192px] lg:h-[217px] flex items-center justify-center rounded-lg border border-border/30 bg-muted/20 overflow-hidden"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
           >
-            <div className="w-full overflow-hidden">
+            <div className="w-full h-full p-2 sm:p-3">
               <TransactionHeatmap 
                 data={transactionActivity} 
               />
             </div>
           </motion.div>
-        </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+      </CardContent>
+    </Card>
   );
 }
