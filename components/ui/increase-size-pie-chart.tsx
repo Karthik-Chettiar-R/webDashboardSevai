@@ -18,15 +18,15 @@ import {
 } from "@/components/ui/chart";
 
 export interface DashboardData {
-  chartTitle: string;
-  chartPeriod: string;
-  categoryTitle: string;
-  streakDays?: number;
+  chartTitle?: string;
+  chartPeriod?: string;
+  categoryTitle?: string;
+  totalVisitors?: number;
   browsers: Array<{
     id: string;
     name: string;
     visitors: number;
-    color: string;
+    color?: string;
   }>;
 }
 
@@ -137,13 +137,20 @@ export function IncreaseSizePieChart({
   const INNER_RADIUS = isMobile ? INNER_RADIUS_MOBILE : INNER_RADIUS_DESKTOP;
 
   // Convert dashboard data to chart format
-  const chartDataFromJson = dashboardData ? dashboardData.browsers.map((browser, index) => ({
-    browser: browser.id,
-    visitors: browser.visitors,
-    fill: `var(--color-${browser.id})`,
-    // Use resolved colors for SVG rendering
-    color: resolvedColors[index] || `var(--chart-${index + 1})`
-  })) : chartData;
+  const chartDataFromJson = dashboardData && dashboardData.browsers.length > 0
+    ? dashboardData.browsers.map((browser, index) => {
+        const paletteSize = resolvedColors.length || 5;
+        const paletteIndex = paletteSize > 0 ? index % paletteSize : index;
+        const fallbackColor = resolvedColors[paletteIndex] || `var(--chart-${(paletteIndex % 5) + 1})`;
+        const appliedColor = browser.color || fallbackColor;
+        return {
+          browser: browser.id,
+          visitors: browser.visitors,
+          fill: appliedColor,
+          color: appliedColor,
+        };
+      })
+    : chartData;
 
   // Sort the data by visitors in DESCENDING order (largest to smallest) for better visual hierarchy
   const sortedChartData = [...chartDataFromJson].sort((a, b) => b.visitors - a.visitors);

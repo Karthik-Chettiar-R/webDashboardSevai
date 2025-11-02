@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { motion } from "motion/react";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -23,6 +24,7 @@ type TransactionData = {
   count: number;
   credit: number;
   debit: number;
+  net?: number;
 };
 
 type DashboardData = {
@@ -32,26 +34,49 @@ type DashboardData = {
   transactionActivity: TransactionData[];
 };
 
+type RawActivityEntry = {
+  date?: string;
+  count?: number;
+  credit?: number;
+  debit?: number;
+  net?: number;
+};
+
+type DashboardResponse = {
+  account?: {
+    currentStreak?: number;
+    balance?: {
+      initial?: number;
+      current?: number;
+      maxEverReached?: number;
+    };
+  };
+  transactions?: {
+    activity?: RawActivityEntry[];
+  };
+};
+
 // Helper function to get day of week
-function getDayOfWeek(dateStr: string): string {
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const date = new Date(dateStr);
-  return days[date.getDay()];
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function toISODate(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-// Helper function to get week number in month
-function getWeekOfMonth(dateStr: string): number {
-  const date = new Date(dateStr);
-  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-  const dayOfMonth = date.getDate();
-  return Math.ceil((dayOfMonth + firstDay.getDay()) / 7);
+function startOfDay(date: Date): Date {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
 }
 
-// Helper function to get month name
-function getMonthName(dateStr: string): string {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const date = new Date(dateStr);
-  return months[date.getMonth()];
+function addDays(date: Date, amount: number): Date {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + amount);
+  return copy;
 }
 
 // Process real data based on period
@@ -67,100 +92,101 @@ function processTransactionData(
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  const now = new Date();
-  let filtered: TransactionData[] = [];
+  const firstTransactionDate = startOfDay(new Date(sorted[0].date));
+  const lastTransactionDate = startOfDay(new Date(sorted[sorted.length - 1].date));
+  const today = startOfDay(new Date());
 
-  if (period === 'week') {
-    // Last 7 days
-    const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 6);
-    filtered = sorted.filter(t => new Date(t.date) >= weekAgo);
-  } else if (period === 'month') {
-    // Last 30 days
-    const monthAgo = new Date(now);
-    monthAgo.setDate(monthAgo.getDate() - 29);
-    filtered = sorted.filter(t => new Date(t.date) >= monthAgo);
-  } else {
-    // All time
-    filtered = sorted;
+  const transactionByDate = new Map<string, { credit: number; debit: number }>();
+  sorted.forEach((item) => {
+    const entry = transactionByDate.get(item.date) || { credit: 0, debit: 0 };
+    entry.credit += item.credit;
+    entry.debit += item.debit;
+    transactionByDate.set(item.date, entry);
+  });
+
+  const endDate = lastTransactionDate < today ? lastTransactionDate : today;
+
+  if (period === "week" || period === "month") {
+    const span = period === "week" ? 6 : 29;
+    const desiredStart = addDays(endDate, -span);
+  const startDate = desiredStart;
+
+    if (startDate > endDate) {
+      return [];
+    }
+
+    let baseBalance = initialBalance;
+    sorted.forEach((item) => {
+      const itemDate = startOfDay(new Date(item.date));
+      if (itemDate < startDate) {
+        baseBalance += item.credit - item.debit;
+      }
+    });
+
+    const results: Array<{ label: string; balance: number; credit: number; debit: number; date: string }> = [];
+    let runningBalance = baseBalance;
+    let cursor = new Date(startDate);
+
+    while (cursor <= endDate) {
+      const dateKey = toISODate(cursor);
+      const totals = transactionByDate.get(dateKey) || { credit: 0, debit: 0 };
+      runningBalance += totals.credit - totals.debit;
+      const label = period === "week"
+        ? DAY_NAMES[cursor.getDay()]
+        : `${MONTH_NAMES[cursor.getMonth()]} ${cursor.getDate()}`;
+      results.push({
+        label,
+        balance: runningBalance,
+        credit: totals.credit,
+        debit: totals.debit,
+        date: dateKey,
+      });
+      cursor = addDays(cursor, 1);
+    }
+
+    return results;
   }
 
-  if (filtered.length === 0) return [];
+  // All-time (monthly aggregation)
+  const monthlyTotals = new Map<string, { credit: number; debit: number }>();
+  sorted.forEach((item) => {
+    const itemDate = new Date(item.date);
+    const key = `${itemDate.getFullYear()}-${itemDate.getMonth()}`;
+    const entry = monthlyTotals.get(key) || { credit: 0, debit: 0 };
+    entry.credit += item.credit;
+    entry.debit += item.debit;
+    monthlyTotals.set(key, entry);
+  });
+
+  const monthsInRange: Array<{ key: string; date: Date }> = [];
+  let monthCursor = new Date(firstTransactionDate.getFullYear(), firstTransactionDate.getMonth(), 1);
+  const monthEnd = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+
+  while (monthCursor <= monthEnd) {
+    const key = `${monthCursor.getFullYear()}-${monthCursor.getMonth()}`;
+    monthsInRange.push({ key, date: new Date(monthCursor) });
+    monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
+  }
 
   let runningBalance = initialBalance;
-  
-  if (period === 'week') {
-    // Group by day
-    const dailyData: { [key: string]: { credit: number; debit: number; date: string } } = {};
-    
-    filtered.forEach(t => {
-      const day = getDayOfWeek(t.date);
-      if (!dailyData[day]) {
-        dailyData[day] = { credit: 0, debit: 0, date: t.date };
-      }
-      dailyData[day].credit += t.credit;
-      dailyData[day].debit += t.debit;
-    });
+  sorted.forEach((item) => {
+    const itemDate = startOfDay(new Date(item.date));
+    if (itemDate < firstTransactionDate) {
+      runningBalance += item.credit - item.debit;
+    }
+  });
 
-    // Ensure we have all 7 days
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return days.map(day => {
-      const data = dailyData[day] || { credit: 0, debit: 0, date: '' };
-      runningBalance = runningBalance + data.credit - data.debit;
-      return {
-        label: day,
-        balance: runningBalance,
-        credit: data.credit,
-        debit: data.debit
-      };
-    });
-  } else if (period === 'month') {
-    // Group by week
-    const weeklyData: { [key: number]: { credit: number; debit: number } } = {};
-    
-    filtered.forEach(t => {
-      const week = getWeekOfMonth(t.date);
-      if (!weeklyData[week]) {
-        weeklyData[week] = { credit: 0, debit: 0 };
-      }
-      weeklyData[week].credit += t.credit;
-      weeklyData[week].debit += t.debit;
-    });
-
-    return Object.entries(weeklyData).map(([week, data]) => {
-      runningBalance = runningBalance + data.credit - data.debit;
-      return {
-        label: `Week ${week}`,
-        balance: runningBalance,
-        credit: data.credit,
-        debit: data.debit
-      };
-    });
-  } else {
-    // Group by month
-    const monthlyData: { [key: string]: { credit: number; debit: number; date: string } } = {};
-    
-    filtered.forEach(t => {
-      const month = getMonthName(t.date);
-      if (!monthlyData[month]) {
-        monthlyData[month] = { credit: 0, debit: 0, date: t.date };
-      }
-      monthlyData[month].credit += t.credit;
-      monthlyData[month].debit += t.debit;
-    });
-
-    return Object.entries(monthlyData)
-      .sort((a, b) => new Date(a[1].date).getTime() - new Date(b[1].date).getTime())
-      .map(([month, data]) => {
-        runningBalance = runningBalance + data.credit - data.debit;
-        return {
-          label: month,
-          balance: runningBalance,
-          credit: data.credit,
-          debit: data.debit
-        };
-      });
-  }
+  return monthsInRange.map(({ key, date }) => {
+    const totals = monthlyTotals.get(key) || { credit: 0, debit: 0 };
+    runningBalance += totals.credit - totals.debit;
+    return {
+      label: `${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`,
+      balance: runningBalance,
+      credit: totals.credit,
+      debit: totals.debit,
+      date: toISODate(date),
+    };
+  });
 }
 
 const chartConfig = {
@@ -193,11 +219,43 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
   const minSwipeDistance = 50;
 
   useEffect(() => {
-    // Fetch dashboard data
-    fetch('/dashboard-data.json')
-      .then(res => res.json())
-      .then(data => setDashboardData(data))
-      .catch(err => console.error('Error loading dashboard data:', err));
+    let isCancelled = false;
+
+    const loadDashboard = async () => {
+      try {
+        const response = await fetch('/dashboard-data.json');
+        const json: DashboardResponse = await response.json();
+        if (isCancelled) return;
+
+        const activity = (json.transactions?.activity ?? []).filter(
+          (entry): entry is RawActivityEntry & { date: string } =>
+            typeof entry?.date === 'string'
+        );
+
+        const sanitizedActivity: TransactionData[] = activity.map((item) => ({
+          date: item.date,
+          count: item.count ?? 0,
+          credit: item.credit ?? 0,
+          debit: item.debit ?? 0,
+          net: item.net,
+        }));
+
+        setDashboardData({
+          currentStreak: json.account?.currentStreak ?? 0,
+          initialBalance: json.account?.balance?.initial ?? 0,
+          maxBalanceEverReached: json.account?.balance?.maxEverReached ?? 0,
+          transactionActivity: sanitizedActivity,
+        });
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -346,15 +404,26 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
       <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 w-[100px] sm:w-[110px] md:w-[130px] lg:w-[150px]">
         {/* Total Income Card */}
         <motion.div
-          className="h-[73px] sm:h-[80px] md:h-[92px] lg:h-[104px]"
+          className="h-[73px] sm:h-20 md:h-[92px] lg:h-[104px]"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <Card className="h-full border-chart-2/30 bg-chart-2/5">
             <CardContent className="p-2 sm:p-2.5 md:p-3 lg:p-3.5 flex flex-col justify-center h-full">
-              <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground mb-0.5 sm:mb-1">
-                Income
+              <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                <span className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground">
+                  Income
+                </span>
+                <span
+                  className="inline-flex items-center justify-center h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-full"
+                  style={{
+                    backgroundColor: "color-mix(in srgb, var(--chart-2) 18%, transparent)",
+                    color: "var(--chart-2)",
+                  }}
+                >
+                  <ArrowUpRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-[18px] md:w-[18px]" strokeWidth={2.2} />
+                </span>
               </div>
               <div className="text-sm sm:text-base md:text-lg lg:text-xl font-bold leading-tight" style={{ color: 'var(--chart-2)' }}>
                 $<AnimatedCounter value={totals.credit} duration={1.5} />
@@ -368,15 +437,26 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
 
         {/* Total Expenditure Card */}
         <motion.div
-          className="h-[73px] sm:h-[80px] md:h-[92px] lg:h-[104px]"
+          className="h-[73px] sm:h-20 md:h-[92px] lg:h-[104px]"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <Card className="h-full border-chart-5/30 bg-chart-5/5">
             <CardContent className="p-2 sm:p-2.5 md:p-3 lg:p-3.5 flex flex-col justify-center h-full">
-              <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground mb-0.5 sm:mb-1">
-                Expenditure
+              <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                <span className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground">
+                  Expenditure
+                </span>
+                <span
+                  className="inline-flex items-center justify-center h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-full"
+                  style={{
+                    backgroundColor: "color-mix(in srgb, var(--chart-5) 18%, transparent)",
+                    color: "var(--chart-5)",
+                  }}
+                >
+                  <ArrowDownRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-[18px] md:w-[18px]" strokeWidth={2.2} />
+                </span>
               </div>
               <div className="text-sm sm:text-base md:text-lg lg:text-xl font-bold leading-tight" style={{ color: 'var(--chart-5)' }}>
                 $<AnimatedCounter value={totals.debit} duration={1.5} />

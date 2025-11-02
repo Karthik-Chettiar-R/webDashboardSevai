@@ -1,131 +1,364 @@
 {
-  "currentStreak": 600,
-  "initialBalance": 5000,
-  "maxBalanceEverReached": 12500,
-  "transactionActivity": [
-    { "date": "2025-08-02", "count": 3, "credit": 1200, "debit": 800 },
-    { "date": "2025-08-05", "count": 7, "credit": 2500, "debit": 1800 },
-    { "date": "2025-08-08", "count": 2, "credit": 800, "debit": 600 },
-    { "date": "2025-08-12", "count": 5, "credit": 1800, "debit": 1200 },
-    { "date": "2025-08-15", "count": 8, "credit": 3200, "debit": 2400 },
-    { "date": "2025-08-18", "count": 4, "credit": 1500, "debit": 900 },
-    { "date": "2025-08-22", "count": 6, "credit": 2200, "debit": 1600 },
-    { "date": "2025-08-25", "count": 9, "credit": 3500, "debit": 2800 },
-    { "date": "2025-08-28", "count": 3, "credit": 1100, "debit": 700 },
-    { "date": "2025-09-01", "count": 5, "credit": 1900, "debit": 1300 },
-    { "date": "2025-09-04", "count": 7, "credit": 2600, "debit": 1900 },
-    { "date": "2025-09-07", "count": 4, "credit": 1600, "debit": 1000 },
-    { "date": "2025-09-10", "count": 6, "credit": 2300, "debit": 1700 },
-    { "date": "2025-09-13", "count": 8, "credit": 3100, "debit": 2300 },
-    { "date": "2025-09-16", "count": 3, "credit": 1200, "debit": 800 },
-    { "date": "2025-09-19", "count": 5, "credit": 1800, "debit": 1200 },
-    { "date": "2025-09-22", "count": 9, "credit": 3400, "debit": 2700 },
-    { "date": "2025-09-25", "count": 6, "credit": 2100, "debit": 1500 },
-    { "date": "2025-09-28", "count": 4, "credit": 1400, "debit": 900 },
-    { "date": "2025-10-01", "count": 7, "credit": 2700, "debit": 2000 },
-    { "date": "2025-10-04", "count": 5, "credit": 1900, "debit": 1400 },
-    { "date": "2025-10-07", "count": 8, "credit": 3000, "debit": 2200 },
-    { "date": "2025-10-10", "count": 6, "credit": 2200, "debit": 1600 },
-    { "date": "2025-10-13", "count": 3, "credit": 1100, "debit": 700 },
-    { "date": "2025-10-16", "count": 9, "credit": 3300, "debit": 2600 },
-    { "date": "2025-10-19", "count": 4, "credit": 1500, "debit": 1000 },
-    { "date": "2025-10-22", "count": 7, "credit": 2600, "debit": 1900 },
-    { "date": "2025-10-25", "count": 5, "credit": 1800, "debit": 1300 },
-    { "date": "2025-10-28", "count": 8, "credit": 2900, "debit": 2100 },
-    { "date": "2025-10-31", "count": 6, "credit": 2100, "debit": 1500 },
-    { "date": "2025-11-01", "count": 4, "credit": 1400, "debit": 900 }
-  ],
-  "weekly": {
-    "chartTitle": "Browser Usage",
-    "chartPeriod": "Last 7 Days",
-    "categoryTitle": "Browser Categories",
-    "browsers": [
+  "metadata": {
+    "version": "1.0",
+    "lastUpdated": "2025-11-02T05:00:16.588Z",
+    "currency": "INR"
+  },
+  "account": {
+    "currentStreak": 600,
+    "balance": {
+      "initial": 5000,
+      "current": 23400,
+      "maxEverReached": 23400
+    }
+  },
+  "transactions": {
+    "summary": {
+      "totalCount": 176,
+      "totalCredit": 65700,
+      "totalDebit": 47300,
+      "netFlow": 18400,
+      "dateRange": {
+        "start": "2025-08-02",
+        "end": "2025-11-01"
+      }
+    },
+    "activity": [
       {
-        "id": "chrome",
-        "name": "Chrome",
-        "visitors": 85,
-        "color": "hsl(var(--chart-1))"
+        "date": "2025-08-02",
+        "count": 3,
+        "credit": 1200,
+        "debit": 800,
+        "net": 400
       },
       {
-        "id": "safari",
-        "name": "Safari",
-        "visitors": 62,
-        "color": "hsl(var(--chart-2))"
+        "date": "2025-08-05",
+        "count": 7,
+        "credit": 2500,
+        "debit": 1800,
+        "net": 700
       },
       {
-        "id": "firefox",
-        "name": "Firefox",
-        "visitors": 48,
-        "color": "hsl(var(--chart-3))"
+        "date": "2025-08-08",
+        "count": 2,
+        "credit": 800,
+        "debit": 600,
+        "net": 200
       },
       {
-        "id": "edge",
-        "name": "Edge",
-        "visitors": 35,
-        "color": "hsl(var(--chart-4))"
+        "date": "2025-08-12",
+        "count": 5,
+        "credit": 1800,
+        "debit": 1200,
+        "net": 600
+      },
+      {
+        "date": "2025-08-15",
+        "count": 8,
+        "credit": 3200,
+        "debit": 2400,
+        "net": 800
+      },
+      {
+        "date": "2025-08-18",
+        "count": 4,
+        "credit": 1500,
+        "debit": 900,
+        "net": 600
+      },
+      {
+        "date": "2025-08-22",
+        "count": 6,
+        "credit": 2200,
+        "debit": 1600,
+        "net": 600
+      },
+      {
+        "date": "2025-08-25",
+        "count": 9,
+        "credit": 3500,
+        "debit": 2800,
+        "net": 700
+      },
+      {
+        "date": "2025-08-28",
+        "count": 3,
+        "credit": 1100,
+        "debit": 700,
+        "net": 400
+      },
+      {
+        "date": "2025-09-01",
+        "count": 5,
+        "credit": 1900,
+        "debit": 1300,
+        "net": 600
+      },
+      {
+        "date": "2025-09-04",
+        "count": 7,
+        "credit": 2600,
+        "debit": 1900,
+        "net": 700
+      },
+      {
+        "date": "2025-09-07",
+        "count": 4,
+        "credit": 1600,
+        "debit": 1000,
+        "net": 600
+      },
+      {
+        "date": "2025-09-10",
+        "count": 6,
+        "credit": 2300,
+        "debit": 1700,
+        "net": 600
+      },
+      {
+        "date": "2025-09-13",
+        "count": 8,
+        "credit": 3100,
+        "debit": 2300,
+        "net": 800
+      },
+      {
+        "date": "2025-09-16",
+        "count": 3,
+        "credit": 1200,
+        "debit": 800,
+        "net": 400
+      },
+      {
+        "date": "2025-09-19",
+        "count": 5,
+        "credit": 1800,
+        "debit": 1200,
+        "net": 600
+      },
+      {
+        "date": "2025-09-22",
+        "count": 9,
+        "credit": 3400,
+        "debit": 2700,
+        "net": 700
+      },
+      {
+        "date": "2025-09-25",
+        "count": 6,
+        "credit": 2100,
+        "debit": 1500,
+        "net": 600
+      },
+      {
+        "date": "2025-09-28",
+        "count": 4,
+        "credit": 1400,
+        "debit": 900,
+        "net": 500
+      },
+      {
+        "date": "2025-10-01",
+        "count": 7,
+        "credit": 2700,
+        "debit": 2000,
+        "net": 700
+      },
+      {
+        "date": "2025-10-04",
+        "count": 5,
+        "credit": 1900,
+        "debit": 1400,
+        "net": 500
+      },
+      {
+        "date": "2025-10-07",
+        "count": 8,
+        "credit": 3000,
+        "debit": 2200,
+        "net": 800
+      },
+      {
+        "date": "2025-10-10",
+        "count": 6,
+        "credit": 2200,
+        "debit": 1600,
+        "net": 600
+      },
+      {
+        "date": "2025-10-13",
+        "count": 3,
+        "credit": 1100,
+        "debit": 700,
+        "net": 400
+      },
+      {
+        "date": "2025-10-16",
+        "count": 9,
+        "credit": 3300,
+        "debit": 2600,
+        "net": 700
+      },
+      {
+        "date": "2025-10-19",
+        "count": 4,
+        "credit": 1500,
+        "debit": 1000,
+        "net": 500
+      },
+      {
+        "date": "2025-10-22",
+        "count": 7,
+        "credit": 2600,
+        "debit": 1900,
+        "net": 700
+      },
+      {
+        "date": "2025-10-25",
+        "count": 5,
+        "credit": 1800,
+        "debit": 1300,
+        "net": 500
+      },
+      {
+        "date": "2025-10-28",
+        "count": 8,
+        "credit": 2900,
+        "debit": 2100,
+        "net": 800
+      },
+      {
+        "date": "2025-10-31",
+        "count": 6,
+        "credit": 2100,
+        "debit": 1500,
+        "net": 600
+      },
+      {
+        "date": "2025-11-01",
+        "count": 4,
+        "credit": 1400,
+        "debit": 900,
+        "net": 500
       }
     ]
   },
-  "monthly": {
-    "chartTitle": "Browser Usage",
-    "chartPeriod": "Last 30 Days",
-    "categoryTitle": "Browser Categories",
-    "browsers": [
-      {
-        "id": "chrome",
-        "name": "Chrome",
-        "visitors": 275,
-        "color": "hsl(var(--chart-1))"
+  "analytics": {
+    "browserUsage": {
+      "weekly": {
+        "period": {
+          "type": "days",
+          "value": 7,
+          "label": "Last 7 Days"
+        },
+        "total": 230,
+        "data": [
+          {
+            "id": "chrome",
+            "name": "Chrome",
+            "value": 85,
+            "percentage": 36.96,
+            "color": "#3b82f6"
+          },
+          {
+            "id": "safari",
+            "name": "Safari",
+            "value": 62,
+            "percentage": 26.96,
+            "color": "#10b981"
+          },
+          {
+            "id": "firefox",
+            "name": "Firefox",
+            "value": 48,
+            "percentage": 20.87,
+            "color": "#f59e0b"
+          },
+          {
+            "id": "edge",
+            "name": "Edge",
+            "value": 35,
+            "percentage": 15.22,
+            "color": "#8b5cf6"
+          }
+        ]
       },
-      {
-        "id": "safari",
-        "name": "Safari",
-        "visitors": 200,
-        "color": "hsl(var(--chart-2))"
+      "monthly": {
+        "period": {
+          "type": "days",
+          "value": 30,
+          "label": "Last 30 Days"
+        },
+        "total": 835,
+        "data": [
+          {
+            "id": "chrome",
+            "name": "Chrome",
+            "value": 275,
+            "percentage": 32.93,
+            "color": "#3b82f6"
+          },
+          {
+            "id": "safari",
+            "name": "Safari",
+            "value": 200,
+            "percentage": 23.95,
+            "color": "#10b981"
+          },
+          {
+            "id": "firefox",
+            "name": "Firefox",
+            "value": 187,
+            "percentage": 22.4,
+            "color": "#f59e0b"
+          },
+          {
+            "id": "edge",
+            "name": "Edge",
+            "value": 173,
+            "percentage": 20.72,
+            "color": "#8b5cf6"
+          }
+        ]
       },
-      {
-        "id": "firefox",
-        "name": "Firefox",
-        "visitors": 187,
-        "color": "hsl(var(--chart-3))"
-      },
-      {
-        "id": "edge",
-        "name": "Edge",
-        "visitors": 173,
-        "color": "hsl(var(--chart-4))"
+      "allTime": {
+        "period": {
+          "type": "all",
+          "value": null,
+          "label": "All Time"
+        },
+        "total": 3475,
+        "data": [
+          {
+            "id": "chrome",
+            "name": "Chrome",
+            "value": 1250,
+            "percentage": 35.97,
+            "color": "#3b82f6"
+          },
+          {
+            "id": "safari",
+            "name": "Safari",
+            "value": 890,
+            "percentage": 25.61,
+            "color": "#10b981"
+          },
+          {
+            "id": "firefox",
+            "name": "Firefox",
+            "value": 720,
+            "percentage": 20.72,
+            "color": "#f59e0b"
+          },
+          {
+            "id": "edge",
+            "name": "Edge",
+            "value": 615,
+            "percentage": 17.7,
+            "color": "#8b5cf6"
+          }
+        ]
       }
-    ]
-  },
-  "max": {
-    "chartTitle": "Browser Usage",
-    "chartPeriod": "All Time",
-    "categoryTitle": "Browser Categories",
-    "browsers": [
-      {
-        "id": "chrome",
-        "name": "Chrome",
-        "visitors": 1250,
-        "color": "hsl(var(--chart-1))"
-      },
-      {
-        "id": "safari",
-        "name": "Safari",
-        "visitors": 890,
-        "color": "hsl(var(--chart-2))"
-      },
-      {
-        "id": "firefox",
-        "name": "Firefox",
-        "visitors": 720,
-        "color": "hsl(var(--chart-3))"
-      },
-      {
-        "id": "edge",
-        "name": "Edge",
-        "visitors": 615,
-        "color": "hsl(var(--chart-4))"
-      }
-    ]
+    }
   }
 }

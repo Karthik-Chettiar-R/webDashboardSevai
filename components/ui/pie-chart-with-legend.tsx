@@ -9,7 +9,7 @@ import { StreakFireElement } from "./streak-fire-element";
 import { AnimatedCounter } from "./animated-counter";
 import { CreditDebitChart } from "./credit-debit-chart";
 
-type DataPeriod = "weekly" | "monthly" | "max";
+type DataPeriod = "weekly" | "monthly" | "allTime";
 
 type CardType = {
   id: string;
@@ -24,17 +24,61 @@ type TransactionDay = {
   count: number;
 };
 
-const periodOrder: DataPeriod[] = ["weekly", "monthly", "max"];
+type RawTransactionEntry = {
+  date?: string;
+  count?: number;
+  credit?: number;
+  debit?: number;
+  net?: number;
+};
+
+type BrowserUsageEntry = {
+  id: string;
+  name: string;
+  value: number;
+  percentage?: number;
+  color?: string;
+};
+
+type BrowserUsagePeriod = {
+  period?: {
+    type?: string;
+    value?: number | null;
+    label?: string;
+  };
+  total?: number;
+  data?: BrowserUsageEntry[];
+};
+
+type DashboardResponse = {
+  account?: {
+    currentStreak?: number;
+    balance?: {
+      initial?: number;
+      current?: number;
+      maxEverReached?: number;
+    };
+  };
+  transactions?: {
+    activity?: RawTransactionEntry[];
+  };
+  analytics?: {
+    browserUsage?: Partial<Record<DataPeriod, BrowserUsagePeriod>>;
+  };
+};
+
+const periodOrder: DataPeriod[] = ["weekly", "monthly", "allTime"];
 const periodLabels = {
   weekly: "Weekly",
   monthly: "Monthly",
-  max: "All Time"
+  allTime: "All Time"
 };
 
 export function PieChartWithLegend() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [clickedIndex, setClickedIndex] = useState<number | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [rawData, setRawData] = useState<DashboardResponse | null>(null);
   const [currentStreak, setCurrentStreak] = useState<number>(0);
   const [transactionActivity, setTransactionActivity] = useState<TransactionDay[]>([]);
   const [dataPeriod, setDataPeriod] = useState<DataPeriod>("monthly");
@@ -46,22 +90,90 @@ export function PieChartWithLegend() {
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
 
-  // Load dashboard data from JSON file
+  // Load dashboard data from JSON file once
   useEffect(() => {
+    let isCancelled = false;
+
+    const loadDashboard = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/dashboard-data.json");
+        const json: DashboardResponse = await response.json();
+        if (isCancelled) return;
+
+        setRawData(json);
+        setCurrentStreak(json.account?.currentStreak ?? 0);
+
+        const activity = (json.transactions?.activity ?? []).filter(
+          (entry): entry is RawTransactionEntry & { date: string } =>
+            typeof entry?.date === "string"
+        );
+
+        setTransactionActivity(
+          activity.map((entry) => ({
+            date: entry.date,
+            count: entry.count ?? 0,
+          }))
+        );
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+        if (!isCancelled) {
+          setRawData(null);
+          setDashboardData(null);
+          setTransactionActivity([]);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  // Derive the active period dataset whenever the selection changes
+  useEffect(() => {
+    if (!rawData) {
+      return;
+    }
+
+    const usage = rawData.analytics?.browserUsage?.[dataPeriod];
+
+    if (!usage || !usage.data || usage.data.length === 0) {
+      setDashboardData(null);
+      setActiveIndex(null);
+      setClickedIndex(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
-    fetch('/dashboard-data.json')
-      .then(response => response.json())
-      .then(data => {
-        setDashboardData(data[dataPeriod]);
-        setCurrentStreak(data.currentStreak || 0);
-        setTransactionActivity(data.transactionActivity || []);
-        setTimeout(() => setIsLoading(false), 300);
-      })
-      .catch(error => {
-        console.error('Error loading dashboard data:', error);
-        setIsLoading(false);
-      });
-  }, [dataPeriod]);
+
+    const browsers = usage.data
+      .filter((item): item is BrowserUsageEntry => Boolean(item && item.id))
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        visitors: item.value ?? 0,
+        color: item.color,
+      }));
+
+    setDashboardData({
+      chartTitle: "Browser Usage",
+      chartPeriod: usage.period?.label || periodLabels[dataPeriod],
+      categoryTitle: "Top Browsers",
+      totalVisitors: usage.total,
+      browsers,
+    });
+
+    setActiveIndex(null);
+    setClickedIndex(null);
+
+    const timeout = window.setTimeout(() => setIsLoading(false), 300);
+    return () => window.clearTimeout(timeout);
+  }, [rawData, dataPeriod]);
 
   // Auto-clear clicked state after 500ms (0.5 seconds)
   useEffect(() => {
@@ -125,17 +237,18 @@ export function PieChartWithLegend() {
   };
 
   const handleSynchronize = (cardId: string) => {
-    const dataSource = dashboardData ? dashboardData.browsers : chartData;
-    const index = dataSource.findIndex(d => (dashboardData ? d.id : d.browser) === cardId);
-    if (index !== -1) {
-      setClickedIndex(clickedIndex === index ? null : index);
-      
-      // Auto-clear after 500ms (0.5 seconds) - consistent for both mobile and desktop
-      if (clickedIndex !== index) {
-        setTimeout(() => {
-          setClickedIndex(null);
-        }, 500);
-      }
+    const sortedIndex = categoryCards.findIndex((card) => card.id === cardId);
+
+    if (sortedIndex === -1) {
+      return;
+    }
+
+    setClickedIndex(clickedIndex === sortedIndex ? null : sortedIndex);
+
+    if (clickedIndex !== sortedIndex) {
+      setTimeout(() => {
+        setClickedIndex(null);
+      }, 500);
     }
   };
 
@@ -143,32 +256,51 @@ export function PieChartWithLegend() {
     if (cardId === null) {
       handleHover(null);
     } else {
-      const dataSource = dashboardData ? dashboardData.browsers : chartData;
-      const index = dataSource.findIndex(d => (dashboardData ? d.id : d.browser) === cardId);
-      if (index !== -1) {
-        handleHover(index);
+      const sortedIndex = categoryCards.findIndex((card) => card.id === cardId);
+      if (sortedIndex !== -1) {
+        handleHover(sortedIndex);
       }
     }
   };
 
-  // Use data from JSON if available, otherwise use default chartData
-  const sortedData = dashboardData 
-    ? [...dashboardData.browsers].sort((a, b) => b.visitors - a.visitors)
-    : [...chartData].sort((a, b) => b.visitors - a.visitors);
-  
-  const categoryCards: CardType[] = sortedData.map((item) => {
-    const dataSource = dashboardData ? dashboardData.browsers : chartData;
-    const itemId = dashboardData ? (item as any).id : (item as any).browser;
-    const chartIndex = dataSource.findIndex(d => (dashboardData ? (d as any).id : (d as any).browser) === itemId);
-    return {
-      id: itemId,
-      title: dashboardData ? (item as any).name : (item as any).browser.charAt(0).toUpperCase() + (item as any).browser.slice(1),
-      status: "completed" as const,
-      value: item.visitors,
-      color: dashboardData ? (item as any).color : (item as any).color,
-      isActive: activeIndex === chartIndex || clickedIndex === chartIndex,
-    };
-  });
+  const formatBrowserName = (value: string) =>
+    value.charAt(0).toUpperCase() + value.slice(1);
+
+  const categoryCards: CardType[] = dashboardData
+    ? (() => {
+        const sortedBrowsers = [...dashboardData.browsers].sort(
+          (a, b) => b.visitors - a.visitors
+        );
+
+        return sortedBrowsers.map((item, index) => {
+          const baseColor = item.color || `var(--chart-${(index % 5) + 1})`;
+
+          return {
+            id: item.id,
+            title: item.name,
+            value: item.visitors,
+            color: baseColor,
+            isActive: activeIndex === index || clickedIndex === index,
+          };
+        });
+      })()
+    : (() => {
+        const sortedFallback = [...chartData].sort(
+          (a, b) => b.visitors - a.visitors
+        );
+
+        return sortedFallback.map((item, index) => {
+          return {
+            id: item.browser,
+            title: formatBrowserName(item.browser),
+            value: item.visitors,
+            color: item.color,
+            isActive: activeIndex === index || clickedIndex === index,
+          };
+        });
+      })();
+
+  const anyCardActive = categoryCards.some((card) => card.isActive);
 
   return (
     <motion.div 
@@ -289,13 +421,12 @@ export function PieChartWithLegend() {
                 <div className="space-y-1.5 sm:space-y-2 md:space-y-2.5">
                   {categoryCards.map((card, index) => {
                     const isActive = card.isActive;
-                    const isAnyActive = categoryCards.some(c => c.isActive);
                     
                     return (
                       <motion.div
                         key={card.id}
                         initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: isLoading ? 0.5 : (isAnyActive && !isActive ? 0.3 : 1), x: 0 }}
+                        animate={{ opacity: isLoading ? 0.5 : (anyCardActive && !isActive ? 0.3 : 1), x: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
                         className={`group px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5 border border-border rounded-md sm:rounded-lg cursor-pointer hover:bg-accent/50 active:scale-95 ${
                           isLoading ? 'animate-pulse bg-muted' : ''
