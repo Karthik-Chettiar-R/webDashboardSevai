@@ -8,11 +8,15 @@ interface AnimatedCounterProps {
   className?: string;
   style?: React.CSSProperties;
   duration?: number;
+  format?: (value: number) => string;
 }
 
-export function AnimatedCounter({ value, className, style, duration = 2 }: AnimatedCounterProps) {
+export function AnimatedCounter({ value, className, style, duration = 2, format }: AnimatedCounterProps) {
   const count = useMotionValue(0);
-  const rounded = useTransform(() => Math.round(count.get()));
+  const rounded = useTransform(count, (latest) => Math.round(latest));
+  const formatted = useTransform(rounded, (latest) =>
+    format ? format(latest) : latest.toLocaleString()
+  );
 
   useEffect(() => {
     const controls = animate(count, value, { duration });
@@ -21,7 +25,7 @@ export function AnimatedCounter({ value, className, style, duration = 2 }: Anima
 
   return (
     <motion.span className={className} style={style}>
-      {rounded}
+      {formatted}
     </motion.span>
   );
 }

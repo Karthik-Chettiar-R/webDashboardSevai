@@ -6,8 +6,8 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="space-y-4 mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
-          <p className="text-sm md:text-base text-muted-foreground">Browser usage statistics</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Spending Insights Dashboard</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Monitor streaks, category spending, and credit vs. debit trends</p>
         </div>
         
         <PieChartWithLegend />

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { IncreaseSizePieChart, chartData, type DashboardData } from "./increase-size-pie-chart";
+import { IncreaseSizePieChart, fallbackSegments, type DashboardData } from "./increase-size-pie-chart";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { StreakFireElement } from "./streak-fire-element";
 import { AnimatedCounter } from "./animated-counter";
 import { CreditDebitChart } from "./credit-debit-chart";
+import { OverviewCarousel, type InsightTip } from "./dashboard-overview-slider";
 
 type DataPeriod = "weekly" | "monthly" | "allTime";
 
@@ -16,41 +16,79 @@ type CardType = {
   title: string;
   value: number;
   color: string;
+  percentage?: number;
   isActive?: boolean;
 };
 
-type TransactionDay = {
-  date: string;
-  count: number;
+type CategoryEntry = {
+  category?: string;
+  type?: string;
+  total?: number;
+  percentage?: number;
+  color?: string;
 };
 
-type RawTransactionEntry = {
+type TrendDailyEntry = {
   date?: string;
   count?: number;
   credit?: number;
   debit?: number;
   net?: number;
+  balanceAfter?: number;
+  averageAccountBalance?: number;
 };
 
-type BrowserUsageEntry = {
-  id: string;
-  name: string;
-  value: number;
-  percentage?: number;
-  color?: string;
-};
-
-type BrowserUsagePeriod = {
-  period?: {
-    type?: string;
-    value?: number | null;
-    label?: string;
+type TransactionSummary = {
+  totalCount?: number;
+  totalCredit?: number;
+  totalDebit?: number;
+  netFlow?: number;
+  dateRange?: {
+    start?: string | null;
+    end?: string | null;
   };
-  total?: number;
-  data?: BrowserUsageEntry[];
+};
+
+type CategoryPeriod = {
+  currency?: string;
+  totalDebit?: number;
+  label?: string;
+  data?: CategoryEntry[];
+};
+
+type HabitSnapshotTip = {
+  id?: string;
+  habitId?: string;
+  habitLabel?: string;
+  counsel?: string;
+  recordedAt?: string;
+  accent?: string;
+};
+
+type CoachAdviceEntry = {
+  id?: string;
+  summary?: string;
+  issuedAt?: string;
+  coach?: string;
+  priority?: string;
+};
+
+type LoginEvent = {
+  occurredAt?: string;
+  status?: "success" | "failed";
+  device?: string;
+  ipAddress?: string;
 };
 
 type DashboardResponse = {
+  metadata?: {
+    generatedAt?: string;
+    currency?: string;
+  };
+  authorization?: {
+    lastLogin?: string;
+    loginHistory?: LoginEvent[];
+  };
   account?: {
     currentStreak?: number;
     balance?: {
@@ -60,12 +98,35 @@ type DashboardResponse = {
     };
   };
   transactions?: {
-    activity?: RawTransactionEntry[];
+    summary?: TransactionSummary;
+    categoryBreakdown?: {
+      periods?: Partial<Record<DataPeriod, CategoryPeriod>>;
+    };
+    trend?: {
+      daily?: TrendDailyEntry[];
+    };
   };
-  analytics?: {
-    browserUsage?: Partial<Record<DataPeriod, BrowserUsagePeriod>>;
+  insights?: {
+    habitTips?: HabitSnapshotTip[];
+    coachAdvice?: CoachAdviceEntry[];
   };
+  // Support direct API response format
+  habitInsights?: Array<{
+    id?: number;
+    habitLabel?: string;
+    counsel?: string;
+    evidence?: string;
+    recordedAt?: string;
+  }>;
+  coachAdvice?: Array<{
+    id?: string;
+    headline?: string;
+    counsel?: string;
+    dateCreated?: string;
+  }>;
 };
+
+const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 const periodOrder: DataPeriod[] = ["weekly", "monthly", "allTime"];
 const periodLabels = {
@@ -74,13 +135,21 @@ const periodLabels = {
   allTime: "All Time"
 };
 
+const formatCategoryLabel = (value: string) =>
+  value
+    .split(/[_-]/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
+
 export function PieChartWithLegend() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [clickedIndex, setClickedIndex] = useState<number | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [rawData, setRawData] = useState<DashboardResponse | null>(null);
+  const [insightTips, setInsightTips] = useState<InsightTip[]>([]);
   const [currentStreak, setCurrentStreak] = useState<number>(0);
-  const [transactionActivity, setTransactionActivity] = useState<TransactionDay[]>([]);
+  const [transactionActivity, setTransactionActivity] = useState<Array<{ date: string; count: number }>>([]);
   const [dataPeriod, setDataPeriod] = useState<DataPeriod>("monthly");
   const [isLoading, setIsLoading] = useState(true);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -90,36 +159,92 @@ export function PieChartWithLegend() {
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
 
-  // Load dashboard data from JSON file once
+  // Load dashboard data from JSON file or API
   useEffect(() => {
     let isCancelled = false;
 
     const loadDashboard = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("/dashboard-data.json");
-        const json: DashboardResponse = await response.json();
+        
+        // Try to get userId from URL query params or localStorage
+        const params = new URLSearchParams(window.location.search);
+        const userIdFromUrl = params.get("userId");
+        const userIdFromStorage = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+        const userId = userIdFromUrl || userIdFromStorage;
+
+        let json: DashboardResponse;
+
+        // If userId is provided, fetch from API
+        if (userId) {
+          const response = await fetch(`/api/dashboard?userId=${userId}`);
+          if (!response.ok) {
+            throw new Error("Failed to fetch from API, falling back to JSON");
+          }
+          json = await response.json();
+        } else {
+          // Fallback to JSON file
+          const fileResponse = await fetch("/dashboard-data.json");
+          json = await fileResponse.json();
+        }
+
         if (isCancelled) return;
 
         setRawData(json);
-        setCurrentStreak(json.account?.currentStreak ?? 0);
 
-        const activity = (json.transactions?.activity ?? []).filter(
-          (entry): entry is RawTransactionEntry & { date: string } =>
+        // Handle both API response (habitInsights/coachAdvice) and synced JSON (insights.habitTips/insights.coachAdvice)
+        const habitTipsSource = json.insights?.habitTips ?? json.habitInsights ?? [];
+        const coachAdviceSource = json.insights?.coachAdvice ?? json.coachAdvice ?? [];
+
+        const habitTips = habitTipsSource.map((tip: any) => ({
+          id: tip.id ?? tip.habitId,
+          title: tip.habitLabel,
+          description: tip.counsel,
+          accent: tip.accent ?? "primary",
+          recordedAt: tip.recordedAt,
+        }));
+
+        const coachAdvice = coachAdviceSource.map((advice: any) => ({
+          id: advice.id,
+          title: advice.coach ? `${advice.coach}'s Advice` : "Coach Advice",
+          description: advice.summary ?? advice.counsel ?? advice.headline,
+          accent: "secondary",
+          recordedAt: advice.issuedAt ?? advice.dateCreated,
+        }));
+
+        const combinedTips = [...habitTips, ...coachAdvice]
+          .filter((tip) => Boolean(tip && (tip.title || tip.description)))
+          .sort((a, b) => {
+            const aTime = a.recordedAt ? new Date(a.recordedAt).getTime() : 0;
+            const bTime = b.recordedAt ? new Date(b.recordedAt).getTime() : 0;
+            return bTime - aTime;
+          })
+          .slice(0, 2)
+          .map(({ recordedAt, ...rest }) => rest);
+
+        setInsightTips(combinedTips);
+
+        const rawActivity = (json.transactions?.trend?.daily ?? []).filter(
+          (entry): entry is TrendDailyEntry & { date: string } =>
             typeof entry?.date === "string"
         );
 
-        setTransactionActivity(
-          activity.map((entry) => ({
-            date: entry.date,
-            count: entry.count ?? 0,
-          }))
-        );
+        const transactionActivityData = rawActivity.map((entry) => ({
+          date: entry.date,
+          count: entry.count ?? 0,
+        }));
+
+        setTransactionActivity(transactionActivityData);
+
+        // Use streak from API response (calculated in dashboard-service)
+        setCurrentStreak(json.account?.currentStreak ?? 0);
       } catch (error) {
         console.error("Error loading dashboard data:", error);
         if (!isCancelled) {
           setRawData(null);
           setDashboardData(null);
+          setInsightTips([]);
+          setCurrentStreak(0);
           setTransactionActivity([]);
           setIsLoading(false);
         }
@@ -139,9 +264,10 @@ export function PieChartWithLegend() {
       return;
     }
 
-    const usage = rawData.analytics?.browserUsage?.[dataPeriod];
+    const breakdownPeriods = rawData.transactions?.categoryBreakdown?.periods;
+    const preferredBreakdown = breakdownPeriods?.[dataPeriod] ?? breakdownPeriods?.monthly ?? breakdownPeriods?.allTime;
 
-    if (!usage || !usage.data || usage.data.length === 0) {
+    if (!preferredBreakdown || !preferredBreakdown.data || preferredBreakdown.data.length === 0) {
       setDashboardData(null);
       setActiveIndex(null);
       setClickedIndex(null);
@@ -151,21 +277,63 @@ export function PieChartWithLegend() {
 
     setIsLoading(true);
 
-    const browsers = usage.data
-      .filter((item): item is BrowserUsageEntry => Boolean(item && item.id))
-      .map((item) => ({
-        id: item.id,
-        name: item.name,
-        visitors: item.value ?? 0,
-        color: item.color,
-      }));
+    const normalised = preferredBreakdown.data
+      .filter((item): item is CategoryEntry & { category: string } => Boolean(item && item.category))
+      .map((item, index) => ({
+        id: item.category!,
+        name: formatCategoryLabel(item.category!),
+        amount: item.total ?? 0,
+        type: item.type,
+        color: item.color || `var(--chart-${((index % 5) + 1)})`,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
+    const totalAmountRaw = normalised.reduce((sum, item) => sum + item.amount, 0);
+
+    const topSegments = normalised.slice(0, 4);
+    const remainderSegments = normalised.slice(4);
+    const remainderAmount = remainderSegments.reduce((sum, item) => sum + item.amount, 0);
+
+    let aggregatedSegments = [...topSegments];
+
+    if (remainderAmount > 0) {
+      const miscIndex = aggregatedSegments.findIndex((segment) =>
+        segment.id.toLowerCase().includes("misc") || segment.name.toLowerCase().includes("misc")
+      );
+
+      if (miscIndex >= 0) {
+        aggregatedSegments[miscIndex] = {
+          ...aggregatedSegments[miscIndex],
+          amount: aggregatedSegments[miscIndex].amount + remainderAmount,
+        };
+      } else {
+        const remainderColor = remainderSegments.find((segment) => segment.color)?.color;
+        aggregatedSegments.push({
+          id: "miscellaneous",
+          name: "Miscellaneous",
+          amount: remainderAmount,
+          type: "debit",
+          color:
+            remainderColor || `var(--chart-${((aggregatedSegments.length % 5) + 1)})`,
+        });
+      }
+    }
+
+    const adjustedTotalAmount = aggregatedSegments.reduce((sum, item) => sum + item.amount, 0) || 1;
+
+    const segments = aggregatedSegments.map((segment, index) => ({
+      ...segment,
+      color: segment.color || `var(--chart-${((index % 5) + 1)})`,
+      percentage: adjustedTotalAmount > 0 ? (segment.amount / adjustedTotalAmount) * 100 : 0,
+    }));
 
     setDashboardData({
-      chartTitle: "Browser Usage",
-      chartPeriod: usage.period?.label || periodLabels[dataPeriod],
-      categoryTitle: "Top Browsers",
-      totalVisitors: usage.total,
-      browsers,
+      chartTitle: "Spending by Category",
+      chartPeriod: preferredBreakdown.label || periodLabels[dataPeriod],
+      categoryTitle: "Top Spending Categories",
+      totalAmount: totalAmountRaw,
+      currency: preferredBreakdown.currency || rawData.metadata?.currency || "INR",
+      segments,
     });
 
     setActiveIndex(null);
@@ -263,42 +431,47 @@ export function PieChartWithLegend() {
     }
   };
 
-  const formatBrowserName = (value: string) =>
-    value.charAt(0).toUpperCase() + value.slice(1);
+  const currencyCode = dashboardData?.currency ?? rawData?.metadata?.currency ?? "INR";
 
-  const categoryCards: CardType[] = dashboardData
-    ? (() => {
-        const sortedBrowsers = [...dashboardData.browsers].sort(
-          (a, b) => b.visitors - a.visitors
-        );
+  const currencyFormatter = useMemo(() => {
+    try {
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: currencyCode,
+        maximumFractionDigits: 0,
+      });
+    } catch (error) {
+      console.warn("Falling back to INR currency formatting", error);
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 0,
+      });
+    }
+  }, [currencyCode]);
 
-        return sortedBrowsers.map((item, index) => {
-          const baseColor = item.color || `var(--chart-${(index % 5) + 1})`;
+  const formatCurrencyValue = (value: number) => currencyFormatter.format(Math.round(value));
 
-          return {
-            id: item.id,
-            title: item.name,
-            value: item.visitors,
-            color: baseColor,
-            isActive: activeIndex === index || clickedIndex === index,
-          };
-        });
-      })()
-    : (() => {
-        const sortedFallback = [...chartData].sort(
-          (a, b) => b.visitors - a.visitors
-        );
+  const categoryCards: CardType[] = (() => {
+    const sourceSegments = dashboardData?.segments?.length
+      ? dashboardData.segments
+      : fallbackSegments;
 
-        return sortedFallback.map((item, index) => {
-          return {
-            id: item.browser,
-            title: formatBrowserName(item.browser),
-            value: item.visitors,
-            color: item.color,
-            isActive: activeIndex === index || clickedIndex === index,
-          };
-        });
-      })();
+    const sortedSegments = [...sourceSegments].sort((a, b) => b.amount - a.amount);
+
+    return sortedSegments.map((item, index) => {
+      const baseColor = item.color || `var(--chart-${(index % 5) + 1})`;
+
+      return {
+        id: item.id,
+  title: item.name || formatCategoryLabel(item.id),
+        value: item.amount,
+        color: baseColor,
+        percentage: item.percentage,
+        isActive: activeIndex === index || clickedIndex === index,
+      };
+    });
+  })();
 
   const anyCardActive = categoryCards.some((card) => card.isActive);
 
@@ -309,8 +482,12 @@ export function PieChartWithLegend() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Streak Fire Element - Integrated Component */}
-      <StreakFireElement streakDays={currentStreak} transactionActivity={transactionActivity} />
+      {/* Overview carousel swaps between streak view and placeholder insight cards */}
+      <OverviewCarousel
+        streakDays={currentStreak}
+        transactionActivity={transactionActivity}
+        tips={insightTips}
+      />
       
       {/* Period Indicator with Swipe Navigation */}
       <motion.div 
@@ -466,8 +643,14 @@ export function PieChartWithLegend() {
                               </span>
                             </div>
                             {card.value !== undefined && (
-                              <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground mt-0.5 sm:mt-1 ml-3 sm:ml-4 md:ml-5">
-                                <AnimatedCounter value={card.value} duration={1} /> visitors
+                              <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground mt-0.5 sm:mt-1 ml-3 sm:ml-4 md:ml-5 flex items-center gap-1.5">
+                                <AnimatedCounter value={card.value} duration={1} format={formatCurrencyValue} />
+                                <span>spent</span>
+                                {typeof card.percentage === "number" && (
+                                  <span className="text-[8px] sm:text-[9px] md:text-[10px] text-muted-foreground/80">
+                                    ({card.percentage.toFixed(1)}%)
+                                  </span>
+                                )}
                               </div>
                             )}
                           </>

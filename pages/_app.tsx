@@ -2,8 +2,14 @@ import type { AppProps } from 'next/app'
 import '../styles/globals.css'
 import '../styles/streak-fire-element.css'
 import { useEffect, useState } from 'react'
-import { generateRandomTheme, applyTheme, type Theme } from '../lib/theme-generator'
+import { getThemeByStreak, applyTheme, type Theme } from '../lib/theme-generator'
 import Head from 'next/head'
+
+interface DashboardData {
+  account?: {
+    currentStreak?: number;
+  };
+}
 
 export default function App({ Component, pageProps }: AppProps) {
   const [currentTheme, setCurrentTheme] = useState<Theme | null>(null)
@@ -14,10 +20,26 @@ export default function App({ Component, pageProps }: AppProps) {
     // Force dark theme class
     document.documentElement.classList.add('dark')
     
-    // Generate new random theme on every page load (no persistence)
-    const theme = generateRandomTheme()
-    applyTheme(theme)
-    setCurrentTheme(theme)
+    // Load dashboard data to get current streak
+    fetch('/dashboard-data.json')
+      .then(res => res.json())
+      .then((data: DashboardData) => {
+        const streakDays = data.account?.currentStreak || 0;
+        
+        // Get theme based on streak days (aligned with flame colors)
+        const theme = getThemeByStreak(streakDays)
+        applyTheme(theme)
+        setCurrentTheme(theme)
+        
+        console.log(`🔥 Streak: ${streakDays} days → Theme: ${theme.name}`)
+      })
+      .catch(err => {
+        console.error('Failed to load dashboard data:', err)
+        // Fallback to 0 streak (Graphite theme) if data can't be loaded
+        const theme = getThemeByStreak(0)
+        applyTheme(theme)
+        setCurrentTheme(theme)
+      })
     
     // Mark font as ready to load
     setFontLoaded(true)
@@ -33,13 +55,16 @@ export default function App({ Component, pageProps }: AppProps) {
   const getFontUrl = () => {
     if (!currentTheme) return null
     
-    // Extract font name from fontFamily for Google Fonts URL
     const fontName = currentTheme.fontName
     
-    // For Geist Mono and Open Sans, load from Google Fonts
-    // For monospace fonts, we'll use system fonts
-    if (fontName === 'Geist Mono') {
-      // Geist Mono might not be on Google Fonts, use system monospace
+    // Special handling for non-Google fonts
+    if (fontName === 'Geist Sans' || fontName === 'JetBrains Mono') {
+      // These fonts might not be on Google Fonts
+      // Geist Sans can be loaded from Vercel CDN, JetBrains Mono from Google Fonts
+      if (fontName === 'JetBrains Mono') {
+        return `https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap`
+      }
+      // For Geist Sans, use system fallback
       return null
     }
     

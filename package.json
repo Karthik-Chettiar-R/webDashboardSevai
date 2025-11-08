@@ -10,10 +10,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.548.0",
     "motion": "^12.23.24",
     "next": "^13.4.20",
+    "prisma": "^6.19.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.15.4",

@@ -84,7 +84,8 @@ function getFlameConfig(days: number): FlameConfig {
 
 export function StreakFireElement({ streakDays = 0, transactionActivity = [] }: StreakFireElementProps) {
   const [displayDays, setDisplayDays] = useState(0);
-  const config = getFlameConfig(streakDays);
+  // Re-evaluate config dynamically based on current streakDays value
+  const config = getFlameConfig(displayDays > 0 ? displayDays : streakDays);
 
   // Animate the counter
   useEffect(() => {
@@ -116,14 +117,14 @@ export function StreakFireElement({ streakDays = 0, transactionActivity = [] }: 
   } as React.CSSProperties;
 
   return (
-    <Card className="w-full max-w-4xl mx-auto overflow-hidden">
-      <CardContent className="p-1.5 sm:p-2 md:p-2.5 lg:p-3 flex flex-row items-start gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+    <Card className="mx-auto flex h-full w-full max-w-4xl overflow-hidden">
+      <CardContent className="flex h-full w-full flex-row items-stretch gap-2 p-2 sm:gap-3 sm:p-3 md:gap-4 md:p-4 lg:gap-5 lg:p-5">
         
         {/* Left Column - Fire Animation and Streak Number */}
-        <div className="flex flex-col gap-2 shrink-0">
+        <div className="flex h-full shrink-0 flex-col justify-between gap-2 sm:gap-3">
           {/* Flame Container - Square */}
           <motion.div 
-                className="w-[100px] h-[100px] sm:w-[110px] sm:h-[110px] md:w-[130px] md:h-[130px] lg:w-[150px] lg:h-[150px] flex items-center justify-center rounded-lg border border-border/30 bg-muted/20 overflow-visible"
+                className="w-[90px] h-[90px] sm:w-[110px] sm:h-[110px] md:w-[140px] md:h-[140px] lg:w-[160px] lg:h-[160px] flex items-center justify-center rounded-lg border border-border/30 bg-muted/20 overflow-visible"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
@@ -176,15 +177,18 @@ export function StreakFireElement({ streakDays = 0, transactionActivity = [] }: 
               
               {/* Streak Number Container - Rectangular */}
               <motion.div 
-                className="w-[100px] sm:w-[110px] md:w-[130px] lg:w-[150px] h-[50px] sm:h-[55px] md:h-[60px] lg:h-[65px] flex flex-col items-center justify-center rounded-lg border border-border/30 bg-muted/20 overflow-hidden"
+                className="w-[90px] sm:w-[110px] md:w-[140px] lg:w-[160px] h-[60px] sm:h-[65px] md:h-[75px] lg:h-[80px] flex flex-col items-center justify-center rounded-lg border border-border/30 bg-muted/20 px-1"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
-                <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-none" style={{ color: config.flameColor }}>
+                <div className="text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+                  Streak
+                </div>
+                <div className="mt-0.5 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-none" style={{ color: config.flameColor }}>
                   <AnimatedCounter value={displayDays} duration={1.5} />
                 </div>
-                <div className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground mt-1">
+                <div className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs text-muted-foreground mt-0.5">
                   {displayDays === 1 ? "Day" : "Days"}
                 </div>
               </motion.div>
@@ -192,12 +196,12 @@ export function StreakFireElement({ streakDays = 0, transactionActivity = [] }: 
 
           {/* Right Section - Transaction Activity Heatmap */}
           <motion.div 
-            className="flex-1 min-w-0 h-[152px] sm:h-[167px] md:h-[192px] lg:h-[217px] flex items-center justify-center rounded-lg border border-border/30 bg-muted/20 overflow-hidden"
+            className="flex h-full min-w-0 flex-1 items-center justify-center overflow-hidden rounded-lg border border-border/30 bg-muted/20"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
           >
-            <div className="w-full h-full p-2 sm:p-3">
+            <div className="h-full w-full p-2 sm:p-3 md:p-4">
               <TransactionHeatmap 
                 data={transactionActivity} 
               />

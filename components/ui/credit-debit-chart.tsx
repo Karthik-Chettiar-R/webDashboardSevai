@@ -31,6 +31,7 @@ type DashboardData = {
   currentStreak: number;
   initialBalance: number;
   maxBalanceEverReached: number;
+  currencyCode: string;
   transactionActivity: TransactionData[];
 };
 
@@ -43,6 +44,9 @@ type RawActivityEntry = {
 };
 
 type DashboardResponse = {
+  metadata?: {
+    currency?: string;
+  };
   account?: {
     currentStreak?: number;
     balance?: {
@@ -52,7 +56,9 @@ type DashboardResponse = {
     };
   };
   transactions?: {
-    activity?: RawActivityEntry[];
+    trend?: {
+      daily?: RawActivityEntry[];
+    };
   };
 };
 
@@ -218,6 +224,53 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
 
+  const currencyCode = dashboardData?.currencyCode ?? "INR";
+
+  const currencyFormatter = useMemo(() => {
+    try {
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: currencyCode,
+        maximumFractionDigits: 0,
+      });
+    } catch (error) {
+      console.warn("Falling back to INR currency formatting", error);
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 0,
+      });
+    }
+  }, [currencyCode]);
+
+  const compactCurrencyFormatter = useMemo(() => {
+    try {
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: currencyCode,
+        notation: "compact",
+        maximumFractionDigits: 1,
+      });
+    } catch {
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        notation: "compact",
+        maximumFractionDigits: 1,
+      });
+    }
+  }, [currencyCode]);
+
+  const formatCurrency = (value: number) => currencyFormatter.format(Math.round(value));
+
+  const formatCurrencyCompact = (value: number) => {
+    const absValue = Math.abs(value);
+    if (absValue >= 100000) {
+      return compactCurrencyFormatter.format(value);
+    }
+    return formatCurrency(value);
+  };
+
   useEffect(() => {
     let isCancelled = false;
 
@@ -227,7 +280,7 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
         const json: DashboardResponse = await response.json();
         if (isCancelled) return;
 
-        const activity = (json.transactions?.activity ?? []).filter(
+        const activity = (json.transactions?.trend?.daily ?? []).filter(
           (entry): entry is RawActivityEntry & { date: string } =>
             typeof entry?.date === 'string'
         );
@@ -244,6 +297,7 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
           currentStreak: json.account?.currentStreak ?? 0,
           initialBalance: json.account?.balance?.initial ?? 0,
           maxBalanceEverReached: json.account?.balance?.maxEverReached ?? 0,
+          currencyCode: json.metadata?.currency ?? 'INR',
           transactionActivity: sanitizedActivity,
         });
       } catch (error) {
@@ -310,11 +364,6 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
     return Math.min(...chartData.map(d => d.balance));
   }, [chartData]);
 
-  const currentBalance = useMemo(() => {
-    if (chartData.length === 0) return dashboardData?.initialBalance || 0;
-    return chartData[chartData.length - 1].balance;
-  }, [chartData, dashboardData]);
-
   const periodLabel = {
     week: 'This Week',
     month: 'This Month',
@@ -359,16 +408,15 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
                 tick={{ fontSize: 9 }}
                 width={35}
                 domain={[minAmount * 0.9, maxAmount * 1.1]}
-                tickFormatter={(value) => `$${value > 1000 ? (value / 1000).toFixed(1) + 'k' : value}`}
+                tickFormatter={(value) => formatCurrencyCompact(value as number)}
               />
               <ChartTooltip
                 cursor={false}
-                content={<ChartTooltipContent 
-                  formatter={(value, name) => {
-                    if (name === 'balance') return `$${value.toLocaleString()}`;
-                    return `$${value.toLocaleString()}`;
-                  }}
-                />}
+                content={
+                  <ChartTooltipContent
+                    formatter={(value) => formatCurrency(typeof value === 'number' ? value : Number(value))}
+                  />
+                }
               />
               <Line
                 dataKey="balance"
@@ -426,7 +474,7 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
                 </span>
               </div>
               <div className="text-sm sm:text-base md:text-lg lg:text-xl font-bold leading-tight" style={{ color: 'var(--chart-2)' }}>
-                $<AnimatedCounter value={totals.credit} duration={1.5} />
+                <AnimatedCounter value={totals.credit} duration={1.5} format={formatCurrency} />
               </div>
               <div className="text-[8px] sm:text-[9px] md:text-[10px] text-muted-foreground mt-0.5">
                 {periodLabel}
@@ -459,7 +507,7 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
                 </span>
               </div>
               <div className="text-sm sm:text-base md:text-lg lg:text-xl font-bold leading-tight" style={{ color: 'var(--chart-5)' }}>
-                $<AnimatedCounter value={totals.debit} duration={1.5} />
+                <AnimatedCounter value={totals.debit} duration={1.5} format={formatCurrency} />
               </div>
               <div className="text-[8px] sm:text-[9px] md:text-[10px] text-muted-foreground mt-0.5">
                 {periodLabel}
