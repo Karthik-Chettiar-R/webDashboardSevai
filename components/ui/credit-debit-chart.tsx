@@ -376,7 +376,7 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      className="grid grid-cols-[1fr_auto] gap-2 sm:gap-3 md:gap-4 w-full touch-pan-y"
+      className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 sm:gap-3 md:gap-4 w-full touch-pan-y"
     >
       {/* Line Chart */}
       <Card className="overflow-hidden h-[148px] sm:h-[163px] md:h-[188px] lg:h-[212px]">
@@ -449,15 +449,15 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
       </Card>
 
       {/* Total Cards - Stacked on Right */}
-      <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 w-[100px] sm:w-[110px] md:w-[130px] lg:w-[150px]">
+      <div className="flex flex-row md:flex-col gap-2 sm:gap-3 md:gap-4 w-full md:w-[130px] lg:w-[150px] mt-2 md:mt-0 items-stretch">
         {/* Total Income Card */}
         <motion.div
-          className="h-[73px] sm:h-20 md:h-[92px] lg:h-[104px]"
+          className="flex-1 min-w-0 h-[73px] sm:h-20 md:h-[92px] lg:h-[104px] md:w-full"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Card className="h-full border-chart-2/30 bg-chart-2/5">
+          <Card className="h-full w-full md:w-auto border-chart-2/30 bg-chart-2/5">
             <CardContent className="p-2 sm:p-2.5 md:p-3 lg:p-3.5 flex flex-col justify-center h-full">
               <div className="flex items-center justify-between mb-0.5 sm:mb-1">
                 <span className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground">
@@ -473,10 +473,10 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
                   <ArrowUpRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-[18px] md:w-[18px]" strokeWidth={2.2} />
                 </span>
               </div>
-              <div className="text-sm sm:text-base md:text-lg lg:text-xl font-bold leading-tight" style={{ color: 'var(--chart-2)' }}>
+              <div className="text-lg md:text-xl font-bold leading-tight" style={{ color: 'var(--chart-2)' }}>
                 <AnimatedCounter value={totals.credit} duration={1.5} format={formatCurrency} />
               </div>
-              <div className="text-[8px] sm:text-[9px] md:text-[10px] text-muted-foreground mt-0.5">
+              <div className="text-sm text-muted-foreground mt-0.5">
                 {periodLabel}
               </div>
             </CardContent>
@@ -485,12 +485,12 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
 
         {/* Total Expenditure Card */}
         <motion.div
-          className="h-[73px] sm:h-20 md:h-[92px] lg:h-[104px]"
+          className="flex-1 min-w-0 h-[73px] sm:h-20 md:h-[92px] lg:h-[104px] md:w-full"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Card className="h-full border-chart-5/30 bg-chart-5/5">
+          <Card className="h-full w-full md:w-auto border-chart-5/30 bg-chart-5/5">
             <CardContent className="p-2 sm:p-2.5 md:p-3 lg:p-3.5 flex flex-col justify-center h-full">
               <div className="flex items-center justify-between mb-0.5 sm:mb-1">
                 <span className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground">
@@ -506,10 +506,10 @@ export function CreditDebitChart({ period, onPeriodChange }: CreditDebitChartPro
                   <ArrowDownRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-[18px] md:w-[18px]" strokeWidth={2.2} />
                 </span>
               </div>
-              <div className="text-sm sm:text-base md:text-lg lg:text-xl font-bold leading-tight" style={{ color: 'var(--chart-5)' }}>
+              <div className="text-lg md:text-xl font-bold leading-tight" style={{ color: 'var(--chart-5)' }}>
                 <AnimatedCounter value={totals.debit} duration={1.5} format={formatCurrency} />
               </div>
-              <div className="text-[8px] sm:text-[9px] md:text-[10px] text-muted-foreground mt-0.5">
+              <div className="text-sm text-muted-foreground mt-0.5">
                 {periodLabel}
               </div>
             </CardContent>
